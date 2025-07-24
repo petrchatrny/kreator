@@ -6,16 +6,16 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidLibrary)
     alias(libs.plugins.vanniktech.mavenPublish)
+    alias(libs.plugins.ksp)
 }
 
 group = "cz.petrchatrny"
-version = "1.0.0"
+version = "0.0.1"
 
 kotlin {
     jvm()
     androidTarget {
         publishLibraryVariants("release")
-        @OptIn(ExperimentalKotlinGradlePluginApi::class)
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_11)
         }
@@ -26,11 +26,7 @@ kotlin {
     linuxX64()
 
     sourceSets {
-        val commonMain by getting {
-            dependencies {
-                //put your multiplatform dependencies here
-            }
-        }
+        val commonMain by getting
         val commonTest by getting {
             dependencies {
                 implementation(libs.kotlin.test)
@@ -49,6 +45,16 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+}
+
+dependencies {
+    add("kspCommonMainMetadata", project(":compiler"))
+    add("kspAndroid", project(":compiler"))
+    add("kspIosX64", project(":compiler"))
+    add("kspIosArm64", project(":compiler"))
+    add("kspJvm", project(":compiler"))
+    add("kspJvmTest", project(":compiler"))
+    add("kspLinuxX64", project(":compiler"))
 }
 
 //mavenPublishing {

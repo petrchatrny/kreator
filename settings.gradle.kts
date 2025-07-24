@@ -14,4 +14,5 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "kreator"
-include(":processor")
+include(":annotations")
+include(":compiler")

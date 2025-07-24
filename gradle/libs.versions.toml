@@ -2,12 +2,18 @@
 agp = "8.5.2"
 kotlin = "2.1.10"
 android-minSdk = "24"
-android-compileSdk = "34"
+android-compileSdk = "35"
+ksp = "2.1.10-1.0.29"
+kotlin-poet = "1.18.1"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+ksp-api = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "ksp" }
+kotlinpoet = {module="com.squareup:kotlinpoet", version.ref="kotlin-poet"}
+kotlinpoet-ksp = {module="com.squareup:kotlinpoet-ksp", version.ref="kotlin-poet"}
 
 [plugins]
 androidLibrary = { id = "com.android.library", version.ref = "agp" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 vanniktech-mavenPublish = { id = "com.vanniktech.maven.publish", version = "0.29.0" }
