@@ -1,6 +1,6 @@
 package cz.petrchatrny.kreator.test_jvm.todo
 
-import cz.petrchatrny.kreator.test_jvm.TodoGetters.getProperties
+import cz.petrchatrny.kreator.test_jvm.todo.TodoGetters.getProperties
 import jakarta.annotation.PostConstruct
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
