@@ -25,8 +25,8 @@ dependencies {
     // kotlin
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
-    implementation(project(":kreator-annotations"))
 
     // library usage
-    "ksp"(project(":kreator-compiler"))
+    implementation(project(":kreator-annotations"))
+    ksp((project(":kreator-compiler")))
 }

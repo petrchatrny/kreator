@@ -17,8 +17,8 @@ class MtgCard(
     val id: UUID,
     val name: String,
     val type: String,
+    val rarity: Int?,
     val manaCost: String,
-    val text: String,
-    val power: Int?,
-    val toughness: Int?
+    val rulesText: String?,
+    val set: String
 )
