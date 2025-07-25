@@ -14,5 +14,7 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "kreator"
-include(":annotations")
-include(":compiler")
+include(":kreator-annotations")
+include(":kreator-compiler")
+include(":test-jvm")
+include(":test-kmp")

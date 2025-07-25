@@ -6,10 +6,9 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidLibrary)
     alias(libs.plugins.vanniktech.mavenPublish)
-    alias(libs.plugins.ksp)
 }
 
-group = "cz.petrchatrny"
+group = "cz.petrchatrny.kreator"
 version = "0.0.1"
 
 kotlin {
@@ -47,46 +46,35 @@ android {
     }
 }
 
-dependencies {
-    add("kspCommonMainMetadata", project(":compiler"))
-    add("kspAndroid", project(":compiler"))
-    add("kspIosX64", project(":compiler"))
-    add("kspIosArm64", project(":compiler"))
-    add("kspJvm", project(":compiler"))
-    add("kspJvmTest", project(":compiler"))
-    add("kspLinuxX64", project(":compiler"))
-}
-
 //mavenPublishing {
 //    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
-//
 //    signAllPublications()
 //
-//    coordinates(group.toString(), "library", version.toString())
+//    coordinates(group.toString(), "kreator-annotations", version.toString())
 //
 //    pom {
-//        name = "Kreator"
-//        description = "Kotlin annotation library for DTO generating"
-//        inceptionYear = "2024"
-//        url = "https://github.com/kotlin/multiplatform-library-template/"
+//        name = "Kreator Annotations"
+//        description = "Annotations module for the Kreator code generation library."
+//        inceptionYear = "2025"
+//        url = "https://github.com/petrchatrny/kreator"
 //        licenses {
 //            license {
-//                name = "XXX"
-//                url = "YYY"
-//                distribution = "ZZZ"
+//                name = "MIT License"
+//                url = "https://opensource.org/licenses/MIT"
+//                distribution = "repo"
 //            }
 //        }
 //        developers {
 //            developer {
-//                id = "XXX"
-//                name = "YYY"
-//                url = "ZZZ"
+//                id = "petrchatrny"
+//                name = "Petr Chatrný"
+//                email = "posta@petrchatrny.cz"
 //            }
 //        }
 //        scm {
-//            url = "XXX"
-//            connection = "YYY"
-//            developerConnection = "ZZZ"
+//            url = "https://github.com/petrchatrny/kreator"
+//            connection = "scm:git:https://github.com/petrchatrny/kreator.git"
+//            developerConnection = "scm:git:git@github.com:petrchatrny/kreator.git"
 //        }
 //    }
 //}
