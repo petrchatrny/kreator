@@ -1,25 +1,22 @@
 plugins {
-    alias(libs.plugins.kotlinMultiplatform)
+    alias(libs.plugins.kotlinJvm)
 }
 
 group = "cz.petrchatrny.kreator"
 version = "0.0.1"
 
 kotlin {
-    jvm()
-    sourceSets {
-        val jvmMain by getting {
-            kotlin.srcDir("src/main/kotlin")
-            resources.srcDir("src/main/resources")
+    jvmToolchain(21)
+}
 
-            dependencies {
-                implementation(project(":kreator-annotations")) // Annotations
-                implementation(libs.ksp.api) // KSP
-                implementation(libs.kotlinpoet) // Kotlin Poet
-                implementation(libs.kotlinpoet.ksp) // Kotlin Poet KSP plugin
-            }
-        }
-    }
+dependencies {
+    implementation(project(":kreator-annotations")) // Annotations
+    implementation(libs.ksp.api) // KSP
+    implementation(libs.kotlinpoet) // Kotlin Poet
+    implementation(libs.kotlinpoet.ksp) // Kotlin Poet KSP plugin
+
+    testImplementation(libs.kotlin.test) // pro běžné Kotlin testy
+    testImplementation(libs.kctfork.ksp)
 }
 
 //mavenPublishing {

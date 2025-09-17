@@ -38,8 +38,8 @@ class DtoFieldsProcessor(
 
             val propertySpec = PropertySpec
                 .builder(propertyName, String::class) // name and data type of property
-                .addModifiers(KModifier.CONST)        // constant modifier
-                .initializer("%S", propertyName)      // default value
+                .addModifiers(KModifier.CONST) // constant modifier
+                .initializer("%S", propertyName) // default value
                 .build()
 
             classBuilder.addProperty(propertySpec)

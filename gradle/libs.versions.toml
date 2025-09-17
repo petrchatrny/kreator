@@ -3,6 +3,7 @@ agp = "8.5.2"
 kotlin = "2.1.10"
 android-minSdk = "24"
 android-compileSdk = "35"
+kctfork = "0.8.0"
 ksp = "2.1.10-1.0.29"
 kotlin-poet = "1.18.1"
 kotlinStdlib = "2.1.10"
@@ -13,6 +14,8 @@ ksp-api = { module = "com.google.devtools.ksp:symbol-processing-api", version.re
 kotlinpoet = {module="com.squareup:kotlinpoet", version.ref="kotlin-poet"}
 kotlinpoet-ksp = {module="com.squareup:kotlinpoet-ksp", version.ref="kotlin-poet"}
 kotlin-stdlib = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version.ref = "kotlinStdlib" }
+kctfork-core = { module = "dev.zacsweers.kctfork:core", version.ref = "kctfork" }
+kctfork-ksp = { module = "dev.zacsweers.kctfork:ksp", version.ref = "kctfork" }
 
 [plugins]
 androidLibrary = { id = "com.android.library", version.ref = "agp" }
