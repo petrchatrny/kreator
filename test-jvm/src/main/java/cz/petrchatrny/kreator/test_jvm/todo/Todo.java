@@ -8,11 +8,11 @@ import cz.petrchatrny.kreator.annotations.DtoFields;
 import cz.petrchatrny.kreator.annotations.GenerateGetters;
 import cz.petrchatrny.kreator.annotations.Kreator;
 
-@Kreator(
-        dtos = {
-                @Dto(name = "TodoCreateDto", omit = {TodoFields.id, TodoFields.createdAt})
-        }
-)
+//@Kreator(
+//        dtos = {
+//                @Dto(name = "TodoCreateDto", omit = {TodoFields.id, TodoFields.createdAt})
+//        }
+//)
 @DtoFields
 @GenerateGetters
 public class Todo {
