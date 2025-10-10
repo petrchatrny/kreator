@@ -21,11 +21,11 @@ class DtoFieldsProcessor(
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
         val symbols = resolver.getSymbolsWithAnnotation(DtoFields::class.qualifiedName!!)
-        symbols.filterIsInstance<KSClassDeclaration>().forEach { generateFieldsClass(it) }
+        symbols.filterIsInstance<KSClassDeclaration>().forEach { generateFieldsObject(it) }
         return emptyList()
     }
 
-    private fun generateFieldsClass(classDeclaration: KSClassDeclaration) {
+    private fun generateFieldsObject(classDeclaration: KSClassDeclaration) {
         val packageName = classDeclaration.packageName.asString()
         val originalClassName = classDeclaration.simpleName.asString()
         val newClassName = "${originalClassName}Fields"
