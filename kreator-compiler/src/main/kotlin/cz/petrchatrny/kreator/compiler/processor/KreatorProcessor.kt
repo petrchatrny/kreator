@@ -1,23 +1,15 @@
 package cz.petrchatrny.kreator.compiler.processor
 
-import com.google.devtools.ksp.processing.CodeGenerator
-import com.google.devtools.ksp.processing.Dependencies
-import com.google.devtools.ksp.processing.KSPLogger
-import com.google.devtools.ksp.processing.Resolver
-import com.google.devtools.ksp.processing.SymbolProcessor
+import com.google.devtools.ksp.KspExperimental
+import com.google.devtools.ksp.getAnnotationsByType
+import com.google.devtools.ksp.processing.*
 import com.google.devtools.ksp.symbol.KSAnnotated
-import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import com.google.devtools.ksp.symbol.Nullability
-import com.squareup.kotlinpoet.FileSpec
-import com.squareup.kotlinpoet.FunSpec
-import com.squareup.kotlinpoet.KModifier
-import com.squareup.kotlinpoet.PropertySpec
-import com.squareup.kotlinpoet.TypeSpec
+import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ksp.toTypeName
 import com.squareup.kotlinpoet.ksp.writeTo
-import cz.petrchatrny.kreator.annotations.Dto
 import cz.petrchatrny.kreator.annotations.Kreator
 
 class KreatorProcessor(
@@ -25,69 +17,58 @@ class KreatorProcessor(
     private val logger: KSPLogger
 ) : SymbolProcessor {
 
+    @OptIn(KspExperimental::class)
     override fun process(resolver: Resolver): List<KSAnnotated> {
+        // najít všechny třídy anotované anotací @Kreator
         val symbols = resolver.getSymbolsWithAnnotation(Kreator::class.qualifiedName!!)
             .filterIsInstance<KSClassDeclaration>()
 
         for (annotatedClass in symbols) {
+            logger.info("Building DTOs for class ${annotatedClass.simpleName.asString()}", annotatedClass)
             val originalClassName = annotatedClass.simpleName.asString()
-            val pkgName = annotatedClass.packageName
-            val allProperties = annotatedClass.getAllProperties().toList()
-            val propertyNames = allProperties.map { it.simpleName.asString() }
+            val packageName = annotatedClass.packageName
+            val properties = annotatedClass.getAllProperties().toList()
 
-// TODO kontrola DtoFields trida existuje
-
-//            val deferred = mutableListOf<KSAnnotated>()
-//            val hasDtoFields = annotatedClass.annotations.any {
-//                it.shortName.asString() == "DtoFields"
-//                        && it.annotationType.resolve().declaration.qualifiedName?.asString() == "cz.petrchatrny.kreator.annotations.DtoFields"
-//            }
-//            if (hasDtoFields) {
-//                val expectedFieldsClassName = "$pkgName.${originalClassName}Fields"
-//                val fieldsClassDecl = resolver.getClassDeclarationByName(
-//                    resolver.getKSNameFromString(expectedFieldsClassName)
-//                )
+            // kontrola DtoFields anotace
+//            val isAnnotatedWithDtoFields = annotatedClass.getAnnotationsByType(DtoFields::class)
+//                .toList()
+//                .isNotEmpty()
 //
-//                if (fieldsClassDecl == null) {
-//                    // fields třída zatím neexistuje
-//                    deferred += annotatedClass
+//            // pokud třída obsahuje DtoFields, je nutné zkontrolovat, že již byl vygenerován její Fields objekt
+//            if (isAnnotatedWithDtoFields) {
+//                // vygenerovaný objekt by se měla jmenovat stejně jako původní třída a měl by mít příponu "Fields"
+//                val fieldsClassName = resolver.getKSNameFromString("${packageName}.${originalClassName}Fields")
+//                val fieldsClassDeclaration = resolver.getClassDeclarationByName(fieldsClassName)
+//
+//                // pokud Fields objekt zatím není k dispozici, odložíme zpracování aktuální třídy do dalšího kola
+//                if (fieldsClassDeclaration == null) {
+//                    logger.error("Třída ${fieldsClassName.getShortName()} zatím neexistuje, odkládám zpracování.", annotatedClass)
 //                    continue
 //                }
 //            }
 
-            // obtain @Kreator annotation from annotated class
-            val kreatorAnnotation = annotatedClass.annotations.first {
-                it.annotationType.resolve().declaration.qualifiedName?.asString() == Kreator::class.qualifiedName
-            }
+            // získání anotace @Kreator a její parametry z anotované třídy
+            val kreatorAnnotation: Kreator = annotatedClass.getAnnotationsByType(Kreator::class).first()
 
-            val dtoArgs = kreatorAnnotation.arguments.first { it.name?.asString() == "dtos" }.value as List<*>
+            // TODO tady rozhodnout, jestli se budou generovat SEALED třídy, DATA třídy neob obyč třídy
 
-            for (dtoAnno in dtoArgs) {
-                val dto = dtoAnno as KSAnnotation
-                val dtoName = dto.arguments.first { it.name?.asString() == "name" }.value as String
-                val pickList = dto.arguments.first { it.name?.asString() == "pick" }.value as List<String>
-                val omitList = dto.arguments.first { it.name?.asString() == "omit" }.value as List<String>
+            // vygenerování DTO třídy pro každý záznam @Dto anotace
+            kreatorAnnotation.dtos.forEach { dto ->
+                logger.info("Creating dto ${dto.name}")
 
+                val name = dto.name
+                val pickList = dto.pick
+                val omitList = dto.omit
+
+                // TODO kontrola, jestli uživatel nezadal chybný název vlastnosti?
                 val selectedProps = when {
-                    pickList.isNotEmpty() -> allProperties.filter { it.simpleName.asString() in pickList }
-                    omitList.isNotEmpty() -> allProperties.filter { it.simpleName.asString() !in omitList }
-                    else ->  throw IllegalArgumentException("@Dto annotation on class ${annotatedClass.simpleName.asString()} must define either 'pick' or 'omit' as non-empty array.")
+                    pickList.isNotEmpty() -> properties.filter { it.simpleName.asString() in pickList }
+                    omitList.isNotEmpty() -> properties.filter { it.simpleName.asString() !in omitList }
+                    else -> throw IllegalArgumentException("DTO $name of class ${annotatedClass.simpleName.asString()} must define either 'pick' or 'omit' as non-empty array.")
                 }
 
-                generateDtoClass(annotatedClass, dtoName, selectedProps)
+                generateDtoClass(annotatedClass, name, selectedProps)
             }
-
-//            val dtoAnnotations = kreatorAnnotation.arguments
-//                .first { it.name?.asString() == "dtos" }
-//                .value as List<*>
-//
-//            for (dto in dtoAnnotations) {
-//                val dtoAnnotation = dto as KSAnnotation
-//                val name = dtoAnnotation.arguments.firstOrNull { it.name?.asString() == "name" }?.value
-//                val omit = dtoAnnotation.arguments.firstOrNull { it.name?.asString() == "omit" }?.value as? List<*> ?: emptyList<Any>()
-//
-//                logger.warn("Dto name: $name, omit: $omit")
-//            }
         }
 
         return emptyList()
@@ -98,15 +79,18 @@ class KreatorProcessor(
         className: String,
         properties: List<KSPropertyDeclaration>
     ) {
+        // package
         val packageName = originClass.packageName.asString()
 
+        // soubor
         val fileSpecBuilder = FileSpec.builder(packageName, className)
 
+        // třída
         val classSpecBuilder = TypeSpec.classBuilder(className)
-            .addModifiers(KModifier.DATA)
+            .addModifiers(KModifier.DATA) // TODO Data vs Sealed vs Ordinary
 
-        val ctorBuilder = FunSpec.constructorBuilder()
-
+        // konstruktor
+        val constructorBuilder = FunSpec.constructorBuilder()
         for (prop in properties) {
             val name = prop.simpleName.asString()
             val type = prop.type.resolve()
@@ -116,13 +100,19 @@ class KreatorProcessor(
                 .initializer(name)
                 .build()
 
-            ctorBuilder.addParameter(name, typeName)
+            constructorBuilder.addParameter(name, typeName)
             classSpecBuilder.addProperty(propSpec)
         }
 
-        classSpecBuilder.primaryConstructor(ctorBuilder.build())
+        // nastavení konstruktoru
+        classSpecBuilder.primaryConstructor(constructorBuilder.build())
+
+        // přidání třídy do souboru
         fileSpecBuilder.addType(classSpecBuilder.build())
 
-        fileSpecBuilder.build().writeTo(codeGenerator, Dependencies(false))
+        // zápis souboru na disk
+        fileSpecBuilder.build().writeTo(codeGenerator, Dependencies(false, originClass.containingFile!!))
+
+        logger.info("DTO class with name $className was generated")
     }
 }
