@@ -1,3 +1,2 @@
-cz.petrchatrny.kreator.compiler.provider.GetterGeneratorProcessorProvider
 cz.petrchatrny.kreator.compiler.provider.DtoFieldsProcessorProvider
 cz.petrchatrny.kreator.compiler.provider.KreatorProcessorProvider

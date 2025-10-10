@@ -5,7 +5,6 @@ import java.util.Map;
 
 import cz.petrchatrny.kreator.annotations.Dto;
 import cz.petrchatrny.kreator.annotations.DtoFields;
-import cz.petrchatrny.kreator.annotations.GenerateGetters;
 import cz.petrchatrny.kreator.annotations.Kreator;
 
 //@Kreator(
@@ -14,7 +13,6 @@ import cz.petrchatrny.kreator.annotations.Kreator;
 //        }
 //)
 @DtoFields
-@GenerateGetters
 public class Todo {
     public long id;
     public String title;

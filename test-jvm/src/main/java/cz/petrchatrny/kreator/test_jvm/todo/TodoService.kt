@@ -1,6 +1,5 @@
 package cz.petrchatrny.kreator.test_jvm.todo
 
-import cz.petrchatrny.kreator.test_jvm.todo.TodoGetters.getProperties
 import jakarta.annotation.PostConstruct
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
@@ -41,6 +40,5 @@ class TodoService {
             )
         )
         println("Total todos: ${todos.size}")
-        println("Properties of Todo with id 3: ${todos[2].getProperties()}")
     }
 }
