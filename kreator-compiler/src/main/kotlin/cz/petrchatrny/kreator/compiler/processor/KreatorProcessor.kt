@@ -11,6 +11,7 @@ import com.google.devtools.ksp.symbol.Nullability
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ksp.toTypeName
 import com.squareup.kotlinpoet.ksp.writeTo
+import cz.petrchatrny.kreator.annotations.ClassType
 import cz.petrchatrny.kreator.annotations.DtoAttribute
 import cz.petrchatrny.kreator.annotations.Kreator
 import java.util.ArrayList
@@ -52,8 +53,7 @@ class KreatorProcessor(
 
             // získání anotace @Kreator a její parametry z anotované třídy
             val kreatorAnnotation: Kreator = annotatedClass.getAnnotationsByType(Kreator::class).first()
-
-            // TODO tady rozhodnout, jestli se budou generovat SEALED třídy, DATA třídy neob obyč třídy
+            val classType = kreatorAnnotation.classType
 
             // vygenerování DTO třídy pro každý záznam @Dto anotace
             kreatorAnnotation.dtos.forEach { dto ->
@@ -70,7 +70,7 @@ class KreatorProcessor(
                     else -> throw IllegalArgumentException("DTO $name of class ${annotatedClass.simpleName.asString()} must define either 'pick' or 'omit' as non-empty array.")
                 }
 
-                generateDtoClass(annotatedClass, name, selectedProps)
+                generateDtoClass(annotatedClass, name, classType, selectedProps)
             }
         }
 
@@ -80,6 +80,7 @@ class KreatorProcessor(
     private fun generateDtoClass(
         originClass: KSClassDeclaration,
         className: String,
+        classType: ClassType,
         properties: List<KSPropertyDeclaration>,
     ) {
         // package
@@ -90,35 +91,17 @@ class KreatorProcessor(
 
         // třída
         val classSpecBuilder = TypeSpec.classBuilder(className)
-            .addModifiers(KModifier.DATA) // TODO Data vs Sealed vs Ordinary
+        when (classType) {
+            ClassType.CLASS -> {}
+            ClassType.DATA_CLASS -> {
+                classSpecBuilder.addModifiers(KModifier.DATA)
+            }
+        }
 
         // konstruktor
         val constructorBuilder = FunSpec.constructorBuilder()
         for (prop in properties) {
-            // získání použitých anotací jako KSAnnotation
-            val attributeAnnotation = prop.annotations.toList()
-                .filter { ann -> ann.annotationType.resolve().declaration.qualifiedName?.asString() == DtoAttribute::class.qualifiedName }
-                .filter { ann -> (ann.arguments[0].value as ArrayList<String>).contains(className) }
-                .firstOrNull()
-
-            var name: String
-            var type: KSType
-            if (attributeAnnotation != null) {
-                name = attributeAnnotation.arguments[1].value as String
-                type = attributeAnnotation.arguments[2].value as KSType
-            } else {
-                name = prop.simpleName.asString()
-                type = prop.type.resolve()
-            }
-
-            val typeName = type.toTypeName().copy(nullable = type.nullability == Nullability.NULLABLE)
-
-            val propSpec = PropertySpec.builder(name, typeName)
-                .initializer(name)
-                .build()
-
-            constructorBuilder.addParameter(name, typeName)
-            classSpecBuilder.addProperty(propSpec)
+            processDtoAttribute(prop, className, constructorBuilder, classSpecBuilder)
         }
 
         // nastavení konstruktoru
@@ -129,5 +112,36 @@ class KreatorProcessor(
 
         // zápis souboru na disk
         fileSpecBuilder.build().writeTo(codeGenerator, Dependencies(false, originClass.containingFile!!))
+    }
+
+    private fun processDtoAttribute(
+        prop: KSPropertyDeclaration,
+        dtoClassName: String,
+        constructorBuilder: FunSpec.Builder,
+        classSpecBuilder: TypeSpec.Builder,
+    ) {
+        // získání použitých DtoAttribute anotací
+        val attributeAnnotation = prop.annotations.toList()
+            .filter { ann -> ann.annotationType.resolve().declaration.qualifiedName?.asString() == DtoAttribute::class.qualifiedName }
+            .firstOrNull { ann -> (ann.arguments[0].value as ArrayList<*>).contains(dtoClassName) }
+
+        var name: String
+        var type: KSType
+        if (attributeAnnotation != null) {
+            name = attributeAnnotation.arguments[1].value as String
+            type = attributeAnnotation.arguments[2].value as KSType
+        } else {
+            name = prop.simpleName.asString()
+            type = prop.type.resolve()
+        }
+
+        val typeName = type.toTypeName().copy(nullable = type.nullability == Nullability.NULLABLE)
+
+        val propSpec = PropertySpec.builder(name, typeName)
+            .initializer(name)
+            .build()
+
+        constructorBuilder.addParameter(name, typeName)
+        classSpecBuilder.addProperty(propSpec)
     }
 }
