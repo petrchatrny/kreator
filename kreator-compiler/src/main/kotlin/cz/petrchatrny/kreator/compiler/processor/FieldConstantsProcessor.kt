@@ -12,15 +12,15 @@ import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.ksp.writeTo
-import cz.petrchatrny.kreator.annotations.DtoFields
+import cz.petrchatrny.kreator.annotations.FieldConstants
 
-class DtoFieldsProcessor(
+class FieldConstantsProcessor(
     private val codeGenerator: CodeGenerator,
     private val logger: KSPLogger
 ) : SymbolProcessor {
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
-        val symbols = resolver.getSymbolsWithAnnotation(DtoFields::class.qualifiedName!!)
+        val symbols = resolver.getSymbolsWithAnnotation(FieldConstants::class.qualifiedName!!)
         symbols.filterIsInstance<KSClassDeclaration>().forEach { generateFieldsObject(it) }
         return emptyList()
     }

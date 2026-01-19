@@ -14,8 +14,9 @@ import kotlin.reflect.KClass
 @Repeatable
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class DtoAttribute(
+annotation class DtoField(
     vararg val classNames: String,
     val name: String = "",
-    val type: KClass<*> = Any::class
+    val type: KClass<*> = Any::class,
+    val expression: String = ""
 )

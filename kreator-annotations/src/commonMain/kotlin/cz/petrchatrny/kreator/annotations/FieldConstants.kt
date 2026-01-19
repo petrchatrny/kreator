@@ -12,4 +12,4 @@ package cz.petrchatrny.kreator.annotations
  * @see Dto
  */
 @Target(AnnotationTarget.CLASS)
-annotation class DtoFields()
+annotation class FieldConstants

@@ -3,12 +3,12 @@ package cz.petrchatrny.kreator.compiler.provider
 import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.processing.SymbolProcessorProvider
-import cz.petrchatrny.kreator.compiler.processor.DtoFieldsProcessor
+import cz.petrchatrny.kreator.compiler.processor.FieldConstantsProcessor
 
-class DtoFieldsProcessorProvider : SymbolProcessorProvider {
+class FieldConstantsProcessorProvider : SymbolProcessorProvider {
 
     override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor {
-        return DtoFieldsProcessor(
+        return FieldConstantsProcessor(
             codeGenerator = environment.codeGenerator,
             logger = environment.logger
         )

@@ -1,2 +1,2 @@
-cz.petrchatrny.kreator.compiler.provider.DtoFieldsProcessorProvider
+cz.petrchatrny.kreator.compiler.provider.FieldConstantsProcessorProvider
 cz.petrchatrny.kreator.compiler.provider.KreatorProcessorProvider
