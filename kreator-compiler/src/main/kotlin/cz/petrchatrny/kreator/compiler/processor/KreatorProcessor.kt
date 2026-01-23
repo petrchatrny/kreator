@@ -9,10 +9,12 @@ import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.Nullability
 import com.squareup.kotlinpoet.*
+import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
 import com.squareup.kotlinpoet.ksp.writeTo
 import cz.petrchatrny.kreator.annotations.ClassType
 import cz.petrchatrny.kreator.annotations.Conversion
+import cz.petrchatrny.kreator.annotations.Dto
 import cz.petrchatrny.kreator.annotations.DtoField
 import cz.petrchatrny.kreator.annotations.Kreator
 import java.util.ArrayList
@@ -38,31 +40,10 @@ class KreatorProcessor(
 
             // TODO vybrat z Kreator anotace jestli bude výsledek Sealed nebo ne
 
-            // vygenerování DTO třídy pro každý záznam @Dto anotace
+            // vygenerování DTO třídy pro každou použitou @Dto anotaci
             kreatorAnnotation.dtos.forEach { dto ->
                 logger.info("Creating dto ${dto.name}")
-
-                // TODO všechno co je tady pod tímto komentářem přemístit do generateDtoClass funkce
-
-                val name = dto.name
-                val pickList = dto.pick
-                val omitList = dto.omit
-
-                // TODO kontrola, jestli uživatel nezadal chybný název vlastnosti, takovém případě použít warning
-                // výběr správných vlastností pro výslednou třídu na základě argumentů pick/omit
-                val selectedProps = when {
-                    pickList.isNotEmpty() -> properties.filter { it.simpleName.asString() in pickList }
-                    omitList.isNotEmpty() -> properties.filter { it.simpleName.asString() !in omitList }
-                    else -> throw IllegalArgumentException("DTO $name of class ${annotatedClass.simpleName.asString()} must define either 'pick' or 'omit' as non-empty array.")
-                }
-
-                generateDtoClass(
-                    originClass = annotatedClass,
-                    dtoClassName = name,
-                    dtoClassType = kreatorAnnotation.classType,
-                    properties = selectedProps,
-                    conversion = dto.conversion
-                )
+                generateDtoClass(originClass = annotatedClass, originProperties = properties, dto = dto)
             }
         }
 
@@ -71,34 +52,55 @@ class KreatorProcessor(
 
     private fun generateDtoClass(
         originClass: KSClassDeclaration,
-        dtoClassName: String,
-        dtoClassType: ClassType,
-        properties: List<KSPropertyDeclaration>,
-        conversion: Conversion
+        originProperties: List<KSPropertyDeclaration>,
+        dto: Dto
     ) {
         // package
         val packageName = originClass.packageName.asString()
 
         // soubor
-        val fileSpecBuilder = FileSpec.builder(packageName, dtoClassName)
+        val fileSpecBuilder = FileSpec.builder(packageName, dto.name)
 
         // třída
-        val classSpecBuilder = TypeSpec.classBuilder(dtoClassName)
-        when (dtoClassType) {
+        val classSpecBuilder = TypeSpec.classBuilder(dto.name)
+        when (dto.classType) {
             ClassType.CLASS -> {}
             ClassType.DATA_CLASS -> {
                 classSpecBuilder.addModifiers(KModifier.DATA)
             }
         }
 
+        // vlastnosti (výběr správných vlastností pro výslednou třídu na základě argumentů pick/omit)
+        // TODO kontrola, jestli uživatel nezadal chybný název vlastnosti, takovém případě použít warning
+        val properties = when {
+            dto.pick.isNotEmpty() -> originProperties.filter { it.simpleName.asString() in dto.pick }
+            dto.omit.isNotEmpty() -> originProperties.filter { it.simpleName.asString() !in dto.omit }
+            else -> throw IllegalArgumentException("DTO ${dto.name} of class ${originClass.simpleName.asString()} must define either 'pick' or 'omit' as non-empty array.")
+        }
+
         // konstruktor
         val constructorBuilder = FunSpec.constructorBuilder()
         for (prop in properties) {
-            processDtoAttribute(prop, dtoClassName, constructorBuilder, classSpecBuilder)
+            processDtoAttribute(prop, dto.name, constructorBuilder, classSpecBuilder)
         }
 
         // nastavení konstruktoru
         classSpecBuilder.primaryConstructor(constructorBuilder.build())
+
+        // převodní metody
+        when (dto.conversion) {
+            Conversion.NONE -> {}
+            Conversion.FROM -> {
+                addDtoToDomainConversion(classSpecBuilder, originClass)
+            }
+            Conversion.TO -> {
+                addDomainToDtoConversion(originClass, dto.name)
+            }
+            Conversion.BOTH -> {
+                addDtoToDomainConversion(classSpecBuilder, originClass)
+                addDomainToDtoConversion(originClass, dto.name)
+            }
+        }
 
         // přidání třídy do souboru
         fileSpecBuilder.addType(classSpecBuilder.build())
@@ -149,24 +151,19 @@ class KreatorProcessor(
      * novou DTO třídou a existující DOMAIN třídou. Implementace třídy bude jednoduše return a
      * za ním volání konstruktoru dané třídy.
      */
-//    private fun addDtoToDomainConversion(
-//        properties: List<KSPropertyDeclaration>,
-//        dtoClassName: String,
-//        classSpecBuilder: TypeSpec.Builder
-//    ) {
-//        // sestavíme argumenty pro konstruktor
-//        val args = properties.joinToString(", ") { prop ->
-//            val dtoName = getDtoPropertyName(prop, dtoClassName) // funkce níže
-//            "${prop.simpleName.asString()} = this.$dtoName"
-//        }
-//
-//        val fn = FunSpec.builder("toDomain")
-//            .returns(originType)
-//            .addStatement("return %T($args)", originType)
-//            .build()
-//
-//        classSpecBuilder.addFunction(fn)
-//    }
+    private fun addDtoToDomainConversion(
+        classSpecBuilder: TypeSpec.Builder,
+        originClass: KSClassDeclaration
+    ) {
+        // DTO -> DOMAIN
+        // TODO tady se bude muset pracovat i s DtoAnnotation, který atribut se převádí na jaký a jak
+        val fn = FunSpec.builder("toDomain")
+            .returns(originClass.toClassName())
+            .addStatement("""return TODO("NotImplemented")""")
+            .build()
+
+        classSpecBuilder.addFunction(fn)
+    }
 
     /**
      * Metoda vytvoří extension funkci pro Domain třídu. Tato extension funkce bude sloužit
@@ -174,27 +171,9 @@ class KreatorProcessor(
      * konstruktoru DTO třídy. Pokud nebude možné napasovat argumenty, vyhodí exception.
      */
     private fun addDomainToDtoConversion(originClass: KSClassDeclaration, dtoClassName: String) {
-//        // Domain -> DTO
-//        val packageName = originClass.packageName.asString()
-//        val originType = originClass.toClassName()
-//        val dtoType = ClassName(packageName, dtoClassName)
-//
-//        // argumenty konstruktoru DTO
-//        val args = properties.joinToString(", ") { prop ->
-//            val dtoProp = getDtoPropertyName(prop, dtoClassName)
-//            "$dtoProp = this.${prop.simpleName.asString()}"
-//        }
-//
-//        val funSpec = FunSpec.builder("to${dtoClassName}")
-//            .receiver(originType)
-//            .returns(dtoType)
-//            .addStatement("return %T($args)", dtoType)
-//            .build()
-//
-//        val file = FileSpec.builder(packageName, "DomainTo${dtoClassName}Extensions")
-//            .addFunction(funSpec)
-//            .build()
-//
-//        file.writeTo(codeGenerator, Dependencies(false))
+        // Domain -> DTO
+
+        // TODO Tady by to šlo ještě vyřešit bez extension funkce na DOMAIN třídu a to tak, že by se vytvořil
+        // companion object v DTO a přidala by se statická funkce, která by byla jako argument DOMAIN třídu a vracela by DTO
     }
 }

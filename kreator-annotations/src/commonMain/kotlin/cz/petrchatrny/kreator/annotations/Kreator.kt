@@ -11,5 +11,5 @@ package cz.petrchatrny.kreator.annotations
 @Retention(AnnotationRetention.RUNTIME)
 annotation class Kreator(
     vararg val dtos: Dto,
-    val classType: ClassType = ClassType.CLASS
+    val isSealed: Boolean = false
 )

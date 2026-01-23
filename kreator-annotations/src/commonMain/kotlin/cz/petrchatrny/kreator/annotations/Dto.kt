@@ -16,5 +16,6 @@ annotation class Dto(
     val name: String,
     val pick: Array<String> = [],
     val omit: Array<String> = [],
+    val classType: ClassType = ClassType.DATA_CLASS,
     val conversion: Conversion = Conversion.NONE
 )
