@@ -32,29 +32,46 @@ class KreatorProcessor(
         val symbols = resolver.getSymbolsWithAnnotation(Kreator::class.qualifiedName!!)
             .filterIsInstance<KSClassDeclaration>()
 
+        // seznam tříd, které budou zadrženy pro kompilaci i v dalším kole
+        val deferred = mutableListOf<KSClassDeclaration>()
+
         for (annotatedClass in symbols) {
-            val properties = annotatedClass.getAllProperties().toList()
+            try {
+                val properties = annotatedClass.getAllProperties().toList()
 
-            // získání anotace @Kreator a její parametry z anotované třídy
-            val kreatorAnnotation: Kreator = annotatedClass.getAnnotationsByType(Kreator::class).first()
+                // získání anotace @Kreator a její parametry z anotované třídy
+                val kreatorAnnotation: Kreator = annotatedClass.getAnnotationsByType(Kreator::class).first()
 
-            // TODO vybrat z Kreator anotace jestli bude výsledek Sealed nebo ne
+                // TODO vybrat z Kreator anotace jestli bude výsledek Sealed nebo ne
+                // kreatorAnnotation.isSealed
 
-            // vygenerování DTO třídy pro každou použitou @Dto anotaci
-            kreatorAnnotation.dtos.forEach { dto ->
-                logger.info("Creating dto ${dto.name}")
-                generateDtoClass(originClass = annotatedClass, originProperties = properties, dto = dto)
+                // vygenerování DTO třídy pro každou použitou @Dto anotaci
+                val dtoFiles = mutableListOf<FileSpec>()
+                kreatorAnnotation.dtos.forEach { dto ->
+                    logger.info("Creating dto ${dto.name}")
+                    logger.info("Class: ${annotatedClass.annotations.toList()}")
+                    dtoFiles.add(generateDtoFile(originClass = annotatedClass, originProperties = properties, dto = dto))
+                }
+
+                // zápis vygenerovaných tříd na disk
+                for (file in dtoFiles) {
+                    file.writeTo(codeGenerator, Dependencies(false, annotatedClass.containingFile!!))
+                }
+            }
+            catch (_: IllegalStateException) {
+                logger.info("Invalid symbol added: $annotatedClass")
+                deferred.add(annotatedClass)
             }
         }
 
-        return emptyList()
+        return deferred
     }
 
-    private fun generateDtoClass(
+    private fun generateDtoFile(
         originClass: KSClassDeclaration,
         originProperties: List<KSPropertyDeclaration>,
         dto: Dto
-    ) {
+    ) : FileSpec {
         // package
         val packageName = originClass.packageName.asString()
 
@@ -93,9 +110,11 @@ class KreatorProcessor(
             Conversion.FROM -> {
                 addDtoToDomainConversion(classSpecBuilder, originClass)
             }
+
             Conversion.TO -> {
                 addDomainToDtoConversion(originClass, dto.name)
             }
+
             Conversion.BOTH -> {
                 addDtoToDomainConversion(classSpecBuilder, originClass)
                 addDomainToDtoConversion(originClass, dto.name)
@@ -106,7 +125,7 @@ class KreatorProcessor(
         fileSpecBuilder.addType(classSpecBuilder.build())
 
         // zápis souboru na disk
-        fileSpecBuilder.build().writeTo(codeGenerator, Dependencies(false, originClass.containingFile!!))
+        return fileSpecBuilder.build()
     }
 
     // TODO k tomuto se zkusit vrátit, protože použití resolve() metody a výběr argumentů na základě indexů není ideální

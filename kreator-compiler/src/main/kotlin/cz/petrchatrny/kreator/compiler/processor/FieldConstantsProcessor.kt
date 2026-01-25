@@ -48,6 +48,10 @@ class FieldConstantsProcessor(
         fileBuilder.addType(classBuilder.build())
 
         val fileSpec = fileBuilder.build()
-        fileSpec.writeTo(codeGenerator, Dependencies(true, classDeclaration.containingFile!!))
+        try {
+            fileSpec.writeTo(codeGenerator, Dependencies(true, classDeclaration.containingFile!!))
+        } catch (e: FileAlreadyExistsException) {
+            logger.info("Skipping generation of ${classDeclaration.simpleName}. File already exists")
+        }
     }
 }
