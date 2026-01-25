@@ -49,7 +49,6 @@ class KreatorProcessor(
                 val dtoFiles = mutableListOf<FileSpec>()
                 kreatorAnnotation.dtos.forEach { dto ->
                     logger.info("Creating dto ${dto.name}")
-                    logger.info("Class: ${annotatedClass.annotations.toList()}")
                     dtoFiles.add(generateDtoFile(originClass = annotatedClass, originProperties = properties, dto = dto))
                 }
 
@@ -71,7 +70,7 @@ class KreatorProcessor(
         originClass: KSClassDeclaration,
         originProperties: List<KSPropertyDeclaration>,
         dto: Dto
-    ) : FileSpec {
+    ): FileSpec {
         // package
         val packageName = originClass.packageName.asString()
 
@@ -92,7 +91,10 @@ class KreatorProcessor(
         val properties = when {
             dto.pick.isNotEmpty() -> originProperties.filter { it.simpleName.asString() in dto.pick }
             dto.omit.isNotEmpty() -> originProperties.filter { it.simpleName.asString() !in dto.omit }
-            else -> throw IllegalArgumentException("DTO ${dto.name} of class ${originClass.simpleName.asString()} must define either 'pick' or 'omit' as non-empty array.")
+            else -> emptyList()
+        }
+        if (properties.isEmpty()) {
+            logger.warn("DTO ${dto.name} of class ${originClass.simpleName.asString()} must define either 'pick' or 'omit' as non-empty array.")
         }
 
         // konstruktor
