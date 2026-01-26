@@ -4,6 +4,7 @@ import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.getAnnotationsByType
 import com.google.devtools.ksp.processing.*
 import com.google.devtools.ksp.symbol.KSAnnotated
+import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import com.google.devtools.ksp.symbol.KSType
@@ -18,6 +19,7 @@ import cz.petrchatrny.kreator.annotations.Dto
 import cz.petrchatrny.kreator.annotations.DtoField
 import cz.petrchatrny.kreator.annotations.Kreator
 import java.util.ArrayList
+import kotlin.collections.contains
 
 @OptIn(KspExperimental::class)
 class KreatorProcessor(
@@ -93,6 +95,7 @@ class KreatorProcessor(
             dto.omit.isNotEmpty() -> originProperties.filter { it.simpleName.asString() !in dto.omit }
             else -> emptyList()
         }
+        // TODO kontrola, jestli zde není použitá Data class, protože data class musí definovat alespoň jeden argument
         if (properties.isEmpty()) {
             logger.warn("DTO ${dto.name} of class ${originClass.simpleName.asString()} must define either 'pick' or 'omit' as non-empty array.")
         }
@@ -100,7 +103,30 @@ class KreatorProcessor(
         // konstruktor
         val constructorBuilder = FunSpec.constructorBuilder()
         for (prop in properties) {
-            processDtoAttribute(prop, dto.name, constructorBuilder, classSpecBuilder)
+            logger.info("Processing property ${prop.simpleName.getShortName()}")
+
+            // získání použitých DtoAttribute anotací
+            val attributeAnnotations = prop.annotations.toList()
+                .filter { ann -> ann.annotationType.resolve().declaration.qualifiedName?.asString() == DtoField::class.qualifiedName }
+                .filter { ann -> (ann.arguments[0].value as ArrayList<*>).contains(dto.name) }
+
+            // aplikování změn datových typů a názvů
+            for (annotation in attributeAnnotations) {
+                processDtoAttribute(prop, annotation, constructorBuilder, classSpecBuilder)
+            }
+
+            // pokud propety nemá anotaci @DtoAttribute, ale byla vybrána, přidáme ji taky
+            if (attributeAnnotations.isEmpty()) {
+                val type = prop.type.resolve()
+                val typeName = type.toTypeName().copy(nullable = type.nullability == Nullability.NULLABLE)
+
+                val propSpec = PropertySpec.builder(prop.simpleName.asString(), typeName)
+                    .initializer(prop.simpleName.asString())
+                    .build()
+
+                constructorBuilder.addParameter(prop.simpleName.asString(), typeName)
+                classSpecBuilder.addProperty(propSpec)
+            }
         }
 
         // nastavení konstruktoru
@@ -132,31 +158,24 @@ class KreatorProcessor(
 
     // TODO k tomuto se zkusit vrátit, protože použití resolve() metody a výběr argumentů na základě indexů není ideální
     private fun processDtoAttribute(
-        prop: KSPropertyDeclaration,
-        dtoClassName: String,
+        property: KSPropertyDeclaration,
+        annotation: KSAnnotation,
         constructorBuilder: FunSpec.Builder,
         classSpecBuilder: TypeSpec.Builder,
     ) {
-        // získání použitých DtoAttribute anotací
-        val attributeAnnotation = prop.annotations.toList()
-            .filter { ann -> ann.annotationType.resolve().declaration.qualifiedName?.asString() == DtoField::class.qualifiedName }
-            .firstOrNull { ann -> (ann.arguments[0].value as ArrayList<*>).contains(dtoClassName) }
-
         var name: String
         var type: KSType
-        if (attributeAnnotation != null) {
-            name = attributeAnnotation.arguments[1].value as String
-            type = attributeAnnotation.arguments[2].value as KSType
+        name = annotation.arguments[1].value as String // TODO prvek na pozici 1 nemusí být název atributu
+        type = annotation.arguments[2].value as KSType
 
-            // kontrola výchozího typu Any, pokud uživatel nespecifikoval vlastní typ, použít výchozí typ property
-            if (type == this.resolver?.builtIns?.anyType) {
-                type = prop.type.resolve()
-            }
-        } else {
-            name = prop.simpleName.asString()
-            type = prop.type.resolve()
+        // kontrola výchozího typu Any, pokud uživatel nespecifikoval vlastní typ, použít výchozí typ property
+        if (type == this.resolver?.builtIns?.anyType) {
+            type = property.type.resolve()
         }
 
+        if (name.isEmpty()) {
+            name = property.simpleName.asString()
+        }
         val typeName = type.toTypeName().copy(nullable = type.nullability == Nullability.NULLABLE)
 
         val propSpec = PropertySpec.builder(name, typeName)
