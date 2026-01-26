@@ -4,15 +4,15 @@ import java.time.LocalDateTime;
 import java.util.Map;
 
 import cz.petrchatrny.kreator.annotations.Dto;
-import cz.petrchatrny.kreator.annotations.DtoFields;
+import cz.petrchatrny.kreator.annotations.FieldConstants;
 import cz.petrchatrny.kreator.annotations.Kreator;
 
-//@Kreator(
-//        dtos = {
-//                @Dto(name = "TodoCreateDto", omit = {TodoFields.id, TodoFields.createdAt})
-//        }
-//)
-@DtoFields
+@Kreator(
+        dtos = {
+                @Dto(name = "TodoCreateDto", omit = {TodoFields.id, TodoFields.createdAt})
+        }
+)
+@FieldConstants
 public class Todo {
     public long id;
     public String title;
