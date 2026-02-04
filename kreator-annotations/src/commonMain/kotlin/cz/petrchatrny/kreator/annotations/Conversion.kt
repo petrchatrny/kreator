@@ -5,7 +5,6 @@ package cz.petrchatrny.kreator.annotations
  */
 enum class Conversion {
     NONE, // nebude se generovat žádná
-    FROM, // bude se generovat metoda převodu z DTO na doménovou třídu
-    TO, // bude se generovat metoda převodu doménové třídy na DTO
-    BOTH // budou se generovat obě metody
+    FROM, // bude se generovat metoda převodu z doménové třídy na DTO
+    TO, // bude se generovat metoda převodu DTO na doménovou třídu
 }

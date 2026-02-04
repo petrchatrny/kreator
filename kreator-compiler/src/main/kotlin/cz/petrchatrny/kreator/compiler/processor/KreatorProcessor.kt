@@ -2,15 +2,18 @@ package cz.petrchatrny.kreator.compiler.processor
 
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.getAnnotationsByType
+import com.google.devtools.ksp.getConstructors
 import com.google.devtools.ksp.processing.*
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSTypeReference
 import com.google.devtools.ksp.symbol.Nullability
 import com.squareup.kotlinpoet.*
+import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
 import com.squareup.kotlinpoet.ksp.writeTo
 import cz.petrchatrny.kreator.annotations.ClassType
@@ -18,6 +21,7 @@ import cz.petrchatrny.kreator.annotations.Conversion
 import cz.petrchatrny.kreator.annotations.Dto
 import cz.petrchatrny.kreator.annotations.DtoField
 import cz.petrchatrny.kreator.annotations.Kreator
+import cz.petrchatrny.kreator.compiler.util.ConstructorScore
 import cz.petrchatrny.kreator.compiler.util.DtoFieldStruct
 import cz.petrchatrny.kreator.compiler.util.toParameterSpec
 import java.util.ArrayList
@@ -140,28 +144,29 @@ class KreatorProcessor(
         // add properties to class
         classSpecBuilder.addProperties(newProperties)
 
-        // TODO add mapping methods
-//        when (dto.conversion) {
-//            Conversion.NONE -> {}
-//            Conversion.FROM -> {
-//                addDtoToDomainConversion(classSpecBuilder, originClass)
-//            }
-//
-//            Conversion.TO -> {
-//                addDomainToDtoConversion(originClass, dto.name)
-//            }
-//
-//            Conversion.BOTH -> {
-//                addDtoToDomainConversion(classSpecBuilder, originClass)
-//                addDomainToDtoConversion(originClass, dto.name)
-//            }
-//        }
+        // add mapping functions
+        val className = ClassName(packageName = sourceClass.packageName.asString(), simpleNames = listOf(dto.name))
+        when (dto.conversion) {
+            Conversion.NONE -> {}
+
+            Conversion.FROM -> {
+                val compObject = TypeSpec.companionObjectBuilder()
+                val fromDomainFunction = buildFromDomainFunction(sourceClass, className, newProperties)
+                compObject.addFunction(fromDomainFunction)
+                classSpecBuilder.addType(compObject.build())
+            }
+
+            Conversion.TO -> {
+                val toDomainFunction = buildToDomainFunction(sourceClass, newProperties)
+                classSpecBuilder.addFunction(toDomainFunction)
+            }
+        }
 
         // build class
         return classSpecBuilder.build()
     }
 
-    private fun buildDtoProperties(dtoName: String, sourceProperty: KSPropertyDeclaration, ): List<PropertySpec> {
+    private fun buildDtoProperties(dtoName: String, sourceProperty: KSPropertyDeclaration): List<PropertySpec> {
         val dtoProperties = mutableListOf<PropertySpec>()
 
         // parse all DtoField annotations among this property
@@ -171,6 +176,16 @@ class KreatorProcessor(
             .filter { ann -> ann.annotationType.resolve().declaration.qualifiedName?.asString() == DtoField::class.qualifiedName }
             // DTO which is being created
             .filter { ann -> (ann.arguments[0].value as ArrayList<*>).contains(dtoName) }
+//            .map { ann ->
+//                DtoField(
+//                    classNames = ann.arguments[0].value as? Array<out String> ?: emptyArray(),
+//                    name = ann.arguments.find { it.name?.asString() == "name" }?.value as String,
+//                    type = (ann.arguments.find { it.name?.asString() == "type" }?.value as KSType)::class,
+//                    expression = ann.arguments.find { it.name?.asString() == "expression" }?.value as String,
+//                    conversion = ann.arguments.find { it.name?.asString() == "conversion" }?.value as? Conversion
+//                        ?: Conversion.NONE
+//                )
+//            }
             .map { ann -> parseDtoFieldAnnotation(ann) }
 
         // if selected property has no @DtoAttribute annotation, just add it
@@ -204,6 +219,59 @@ class KreatorProcessor(
 
         return dtoProperties
     }
+
+    /**
+     * Companion object function inside DTO
+     * TODO: expression
+     */
+    private fun buildFromDomainFunction(
+        sourceClass: KSClassDeclaration,
+        dtoClass: ClassName,
+        dtoParameters: Set<PropertySpec>
+    ): FunSpec {
+        val parameters = dtoParameters.map { it.toParameterSpec() }
+            .joinToString(", ") { "domain.${it.name}" }
+
+        val fromDomain = FunSpec.builder("fromDomain")
+            .addParameter(name = "domain", type = sourceClass.toClassName())
+            .addStatement(format = "return %T(%L)", dtoClass, parameters)
+            .returns(dtoClass)
+
+        return fromDomain.build()
+    }
+
+    /**
+     * Member function inside DTO
+     * TODO expression
+     */
+    private fun buildToDomainFunction(sourceClass: KSClassDeclaration, dtoProperties: Set<PropertySpec>): FunSpec {
+        val dtoPropsByNames = dtoProperties.associateBy { it.name }
+
+        val bestConstructor = sourceClass.getConstructors()
+            .mapNotNull { scoreConstructor(it, dtoPropsByNames) }
+            .maxByOrNull { it.matchedParameters }
+            ?.ctor
+
+        if (bestConstructor == null) {
+            throw IllegalArgumentException("No matching constructor for DTO")
+        }
+
+        val toDomain = FunSpec.builder("toDomain")
+            .addStatement("")
+            .returns(sourceClass.toClassName())
+
+        return toDomain.build()
+    }
+
+//    /**
+//     * Extension function inside DOMAIN
+//     */
+//    private fun buildToDtoFunction() : Nothing = TODO()
+//
+//    /**
+//     * Extension function inside DOMAIN
+//     */
+//    private fun buildFromDtoFunction(): Nothing = TODO()
 
     /**
      * Protože anotace @DtoField obsahuje jako jeden z argumentů KClass, je nutné přidat toto speciální parsování, jinak by to byl problém
@@ -248,5 +316,28 @@ class KreatorProcessor(
         val nullable = resolvedType.nullability == Nullability.NULLABLE
 
         return resolvedType.toTypeName().copy(nullable = nullable)
+    }
+
+    private fun scoreConstructor(ctor: KSFunctionDeclaration, dtoProps: Map<String, PropertySpec>): ConstructorScore? {
+        var matched = 0
+
+        for (param in ctor.parameters) {
+            val name = param.name?.asString() ?: return null
+            val dtoProp = dtoProps[name]
+
+            if (dtoProp != null) {
+                val paramType = param.type.resolve().toTypeName()
+                if (paramType != dtoProp.type) {
+                    return null // TODO type mismatch
+                }
+                matched++
+            } else {
+                if (!param.hasDefault) {
+                    return null // missing parameter without default value is bad
+                }
+            }
+        }
+
+        return ConstructorScore(ctor, matched)
     }
 }
