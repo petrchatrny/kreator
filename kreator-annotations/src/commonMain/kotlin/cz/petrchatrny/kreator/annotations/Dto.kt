@@ -1,13 +1,19 @@
 package cz.petrchatrny.kreator.annotations
 
 /**
- * Anotace pro definici jedné DTO třídy.
- * Konkrétní podoba výsledné DTO třídy (vlastnosti) se definuje pomocí parametrů pick a omit.
- * Není možné používat souběžně oba parametry, člověk si musí vybrat pouze jeden.
+ * Annotation for defining a single DTO class.
+ * The specific form of the resulting DTO class (its properties) is determined using
+ * the parameters `pick` and `omit`.
+ * Both parameters cannot be used at the same time — you must choose exactly one.
  *
- * [pick] definuje množinu vlastností, které se budou nacházet ve výsledné DTO třídě
- * [omit] říká, které vlastnosti ve výsledné DTO třídě nebudou (zbytek vlastností z množiny všech obsažen bude)
- * [conversion] říká, které převodní metody se budou vytvářet (převod z hlavní třídy na DTO, převod z DTO na hlavní třídu, oboustranný převod nebo žádný)
+ * [name] the name of the generated DTO class
+ * [pick] defines the set of properties that will appear in the resulting DTO class
+ * [omit] defines the properties that will *not* appear in the resulting DTO class
+ *        (all remaining properties from the full set will be included)
+ * [classType] the Kotlin class type — how the new DTO class will be implemented
+ * [conversion] specifies which conversion methods will be generated
+ *              (conversion from the domain class to the DTO, from the DTO to the domain class or none)
+ *
  * @see Kreator
  */
 @Target(AnnotationTarget.CLASS)

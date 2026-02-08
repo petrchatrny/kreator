@@ -8,10 +8,10 @@ import cz.petrchatrny.kreator.annotations.Kreator
 import java.util.UUID
 
 @Kreator(
-    Dto(name = "MtgCardRefDto", pick = ["id"], conversion = Conversion.BOTH),
-    Dto(name = "MtgCardCreateDto", omit = ["id"], conversion = Conversion.FROM),
+    Dto(name = "MtgCardRefDto", pick = ["id"]),
+    Dto(name = "MtgCardCreateDto", omit = ["id"], conversion = Conversion.TO_DOMAIN),
     Dto(name = "MtgCardUpdateDto", omit = ["id", "createdByUser"], classType = ClassType.CLASS),
-    Dto(name = "MtgCardListDto", pick = ["id", "name", "type", "manaCost"], conversion = Conversion.TO),
+    Dto(name = "MtgCardListDto", pick = ["id", "name", "type", "manaCost"], conversion = Conversion.FROM_DOMAIN),
 )
 class MtgCard(
     val name: String,

@@ -1,13 +1,14 @@
 package cz.petrchatrny.kreator.annotations
 
 /**
- * Anotace použitelná nad třídou.
- * Při jejím použití procesor vytvoří nový objekt s příponou "Fields".
- * Tedy při použití na třídě "User" vznikne nový objekt "UserFields".
+ * Annotation that can be applied to a class.
+ * When used, the processor generates a new object with the suffix "Fields".
+ * The newly generated object will contain, as constants, the names of all properties.
+ * For example, applying it to the class "User" will produce a new object "UserFields".
  *
- * Nově vzniklý objekt bude jako konstanty obsahovat názvy všech vlastností, kterými
- * disponuje třída, nad kterou byla anotace použita.
- * Díky použití této anotace je možné snadněji používat anotaci @DTO a vybírat vlastnosti do parametrů pick či omit.
+ * Covered are all properties of the class on which the annotation was applied.
+ * Using this annotation makes it easier to work with the @Dto annotation
+ * and to select properties for the `pick` or `omit` parameters.
  *
  * @see Dto
  */

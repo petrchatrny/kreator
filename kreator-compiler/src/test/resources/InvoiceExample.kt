@@ -14,9 +14,9 @@ import java.math.BigDecimal
 
 @FieldConstants
 @Kreator(
-    Dto("InvoiceCreateDto", pick = [number, customerName, total], conversion = Conversion.FROM),
-    Dto("InvoiceListDto", pick = [customerName, total], conversion = Conversion.TO),
-    Dto("InvoiceInternalDto", pick = [number, total], conversion = Conversion.TO)
+    Dto("InvoiceCreateDto", pick = [number, customerName, total], conversion = Conversion.TO_DOMAIN),
+    Dto("InvoiceListDto", pick = [customerName, total], conversion = Conversion.FROM_DOMAIN),
+    Dto("InvoiceInternalDto", pick = [number, total], conversion = Conversion.FROM_DOMAIN)
 )
 class Invoice(
     val number: Long,

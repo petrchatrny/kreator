@@ -3,16 +3,16 @@ package cz.petrchatrny.kreator.annotations
 import kotlin.reflect.KClass
 
 /**
- * Anotace slouží pro předefinování vlastnosti v DTO.
- * Používá se přímo nad vlastností doménové třídy, kterou chceme v DTO změnit.
- * Označíme ve kterém DTO se má vlastnost změnit a nastavíme její nový název nebo datový typ.
- * Zároveň můžeme nadefinovat, jakým způsobem se má vlastnost z/do DTO převádět, pokud má v obou případech různý datový typ.
- * Anotaci je možné použít opakovaně, je tedy dovoleno z jednoho atributu vytvořit více jiných.
+ * Annotation used to override a property in a DTO.
+ * It is placed directly on the property of the domain class that you want to modify in the DTO.
+ * You specify in which DTO the property should be changed and set its new name or data type.
+ * You can also define how the property should be converted to/from the DTO if the data types differ.
+ * The annotation can be used repeatedly, so it is possible to generate multiple different properties from one attribute.
  *
- * [classNames] označuje na které DTO třídy se má změna vlastnosti aplikovat
- * [name] nové jméno výsledné vlastnosti v DTO, pokud prázdné tak zůstane výchozí
- * [type] nový datový typ výsledné vlastnosti v DTO, pokud bude Any:class tak zůstane výchozí
- * [expression] Kotlin výraz definující, jakým způsobem se bude převádět
+ * [classNames] specifies which DTO classes the property modification should apply to
+ * [name] the new name of the resulting DTO property; if empty, the default name is used
+ * [type] the new data type of the resulting DTO property; if set to Any::class, the default type from domain class is used
+ * [expression] a Kotlin expression defining how the value should be converted
  */
 @Repeatable
 @Target(AnnotationTarget.FIELD)

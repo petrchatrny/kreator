@@ -1,11 +1,12 @@
 package cz.petrchatrny.kreator.annotations
 
 /**
- * Hlavní a nejdůležitější anotace celé knihovny.
- * Používá se nad třídou, ze které se budou generovat nové DTO třídy.
+ * The main and most important annotation of the entire library.
+ * It is applied to a class from which new DTO classes will be generated.
  *
- * [dtos] atribut definuje podoby jednotlivých DTO tříd
- * [isSealed] udává, jestli vygenerované třídy budou v jednom souboru jako sealed třída
+ * [dtos] defines the configurations of the individual DTO classes
+ * [isSealed] specifies whether the generated classes should be placed together
+ *            in a single file as a sealed class hierarchy
  */
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)

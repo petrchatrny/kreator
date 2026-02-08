@@ -1,10 +1,15 @@
 package cz.petrchatrny.kreator.annotations
 
 /**
- * Druhy převodních mapovacích metod
+ * Types of conversion mapping methods
  */
 enum class Conversion {
-    NONE, // nebude se generovat žádná
-    FROM, // bude se generovat metoda převodu z doménové třídy na DTO
-    TO, // bude se generovat metoda převodu DTO na doménovou třídu
+    /** No method will be generated. */
+    NONE,
+
+    /** A method converting a DTO to a domain class will be generated. */
+    TO_DOMAIN,
+
+    /** A method converting a domain class to a DTO will be generated. */
+    FROM_DOMAIN,
 }
