@@ -17,4 +17,4 @@ rootProject.name = "kreator"
 include(":kreator-annotations")
 include(":kreator-compiler")
 include(":test-jvm")
-//include(":test-kmp")
+// TODO include(":test-kmp")
