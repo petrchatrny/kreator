@@ -47,9 +47,6 @@ class KreatorProcessor(
                 // get @Kreator with its parameters from annotated class
                 val kreatorAnnotation: Kreator = annotatedClass.getAnnotationsByType(Kreator::class).first()
 
-                // TODO take from Kreator annotation if result should be sealed or not
-                // kreatorAnnotation.isSealed
-
                 // build DTO class for every @Dto annotation used in @Kreator
                 val dtoClasses = mutableListOf<TypeSpec>()
                 kreatorAnnotation.dtos.forEach { dto ->
@@ -198,8 +195,6 @@ class KreatorProcessor(
         }
         // otherwise apply changes from annotations and construct new property
         else {
-            println("✅" + annotations.first().classNames.firstOrNull())
-
             for (annotation in annotations) {
                 // name
                 var name = annotation.name
@@ -259,13 +254,9 @@ class KreatorProcessor(
         }
 
         // todo string builder and different approach
-        var parameters = ""
-        bestConstructor.parameters.forEach {
-            parameters += dtoPropsByNames[it.name?.asString()]?.name
-            if (bestConstructor.parameters.last() != it) {
-                parameters += ","
-            }
-        }
+        val parameters = bestConstructor.parameters
+            .map { dtoPropsByNames[it.name?.asString()]?.name }
+            .joinToString(separator = ",")
 
         val toDomain = FunSpec.builder("toDomain")
             .addStatement(format = "return %T(%L)", sourceClass.toClassName(), parameters)

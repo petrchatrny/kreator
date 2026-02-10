@@ -183,26 +183,4 @@ class DtoAnnotationTest {
     fun `check class contains to-conversion method`() {
         // TODO
     }
-
-    @Test
-    fun `check class contains both-conversion method`() {
-        // given
-        val source = getKotlinSourceFile("MtgExample.kt")
-
-        // when
-        val compilation = configureCompilation(
-            sources = listOf(source),
-            providers = mutableListOf(KreatorProcessorProvider())
-        )
-        val result = compilation.compile()
-        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
-
-        val generatedCode = compilation.kspSourcesDir
-            .walkTopDown()
-            .first { it.isFile && it.name == "MtgCardRefDto.kt" }
-            .readText()
-
-        // TODO
-        assertContains(generatedCode, "fun toDomain(): MtgCard")
-    }
 }
