@@ -5,9 +5,6 @@ plugins {
     alias(libs.plugins.vanniktech.mavenPublish)
 }
 
-group = "cz.petrchatrny.kreator"
-version = "0.0.1"
-
 kotlin {
     jvmToolchain(21)
 }

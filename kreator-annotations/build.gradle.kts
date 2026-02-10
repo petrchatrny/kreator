@@ -10,9 +10,6 @@ plugins {
     alias(libs.plugins.vanniktech.mavenPublish)
 }
 
-group = "cz.petrchatrny.kreator"
-version = "0.0.1"
-
 kotlin {
     jvm()
     androidTarget {
@@ -25,17 +22,16 @@ kotlin {
     iosArm64()
     iosSimulatorArm64()
     linuxX64()
-    js()
-    wasmJs()
-
-    sourceSets {
-        val commonMain by getting
-        val commonTest by getting {
-            dependencies {
-                implementation(libs.kotlin.test)
-            }
-        }
+    js {
+        browser()
+        nodejs()
     }
+    wasmJs {
+        browser()
+        nodejs()
+    }
+
+    sourceSets {}
 }
 
 android {
