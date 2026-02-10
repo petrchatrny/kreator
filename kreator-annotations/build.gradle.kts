@@ -1,5 +1,7 @@
+@file:OptIn(ExperimentalWasmDsl::class)
+
 import com.vanniktech.maven.publish.SonatypeHost
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -23,6 +25,8 @@ kotlin {
     iosArm64()
     iosSimulatorArm64()
     linuxX64()
+    js()
+    wasmJs()
 
     sourceSets {
         val commonMain by getting
@@ -46,35 +50,35 @@ android {
     }
 }
 
-//mavenPublishing {
-//    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
-//    signAllPublications()
-//
-//    coordinates(group.toString(), "kreator-annotations", version.toString())
-//
-//    pom {
-//        name = "Kreator Annotations"
-//        description = "Annotations module for the Kreator code generation library."
-//        inceptionYear = "2025"
-//        url = "https://github.com/petrchatrny/kreator"
-//        licenses {
-//            license {
-//                name = "MIT License"
-//                url = "https://opensource.org/licenses/MIT"
-//                distribution = "repo"
-//            }
-//        }
-//        developers {
-//            developer {
-//                id = "petrchatrny"
-//                name = "Petr Chatrný"
-//                email = "posta@petrchatrny.cz"
-//            }
-//        }
-//        scm {
-//            url = "https://github.com/petrchatrny/kreator"
-//            connection = "scm:git:https://github.com/petrchatrny/kreator.git"
-//            developerConnection = "scm:git:git@github.com:petrchatrny/kreator.git"
-//        }
-//    }
-//}
+mavenPublishing {
+    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
+    signAllPublications()
+
+    coordinates(group.toString(), "kreator-annotations", version.toString())
+
+    pom {
+        name = "Kreator Annotations"
+        description = "Annotations module for the Kreator - DTO generation library."
+        inceptionYear = "2025"
+        url = "https://github.com/petrchatrny/kreator"
+        licenses {
+            license {
+                name = "MIT License"
+                url = "https://opensource.org/licenses/MIT"
+                distribution = "repo"
+            }
+        }
+        developers {
+            developer {
+                id = "petrchatrny"
+                name = "Petr Chatrný"
+                email = "posta@petrchatrny.cz"
+            }
+        }
+        scm {
+            url = "https://github.com/petrchatrny/kreator"
+            connection = "scm:git:https://github.com/petrchatrny/kreator.git"
+            developerConnection = "scm:git:git@github.com:petrchatrny/kreator.git"
+        }
+    }
+}
