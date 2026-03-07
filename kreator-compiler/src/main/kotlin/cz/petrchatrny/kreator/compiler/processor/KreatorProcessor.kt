@@ -107,9 +107,10 @@ class KreatorProcessor(
         // select the right properties for the DTO class based on pick/omit arguments
         val originProperties = sourceClass.getAllProperties().toList()
         val selectedProperties = when {
+            dto.pick.isNotEmpty() && dto.omit.isNotEmpty() -> { throw IllegalArgumentException("Both pick and omit cannot be used at the same time.") }
             dto.pick.isNotEmpty() -> originProperties.filter { it.simpleName.asString() in dto.pick }
             dto.omit.isNotEmpty() -> originProperties.filter { it.simpleName.asString() !in dto.omit }
-            else -> emptyList()
+            else -> originProperties // both are empty, take every property
         }
 
         // TODO check if user entered invalid name of property
