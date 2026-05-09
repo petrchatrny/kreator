@@ -27,6 +27,6 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect")
 
     // library usage
-    implementation("cz.petrchatrny.kreator:kreator-annotations:0.0.1")
-    ksp("cz.petrchatrny.kreator:kreator-compiler:0.0.1")
+    implementation(project(":kreator-annotations"))
+    ksp((project(":kreator-compiler")))
 }

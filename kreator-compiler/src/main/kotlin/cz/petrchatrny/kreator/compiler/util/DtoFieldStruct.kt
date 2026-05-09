@@ -5,9 +5,9 @@ import cz.petrchatrny.kreator.annotations.Conversion
 import java.util.Collections
 
 data class DtoFieldStruct(
-    var classNames: Set<String> = Collections.emptySet(),
-    var name: String,
-    var type: KSType?,
-    var expression: String,
-    var conversion: Conversion
+    val classNames: Set<String> = Collections.emptySet(),
+    val name: String,
+    val type: KSType?,
+    val expression: String,
+    val conversion: Conversion
 )

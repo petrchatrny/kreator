@@ -2,6 +2,7 @@ package cz.petrchatrny.kreator.test_jvm.book
 
 import cz.petrchatrny.kreator.annotations.Conversion
 import cz.petrchatrny.kreator.annotations.Dto
+import cz.petrchatrny.kreator.annotations.DtoField
 import cz.petrchatrny.kreator.annotations.FieldConstants
 import cz.petrchatrny.kreator.annotations.Kreator
 import cz.petrchatrny.kreator.test_jvm.book.BookFields.author
@@ -15,13 +16,14 @@ import java.util.UUID
 
 @FieldConstants
 @Kreator(
-    Dto("BookCreateDto", omit = [id], conversion = Conversion.FROM_DOMAIN),
-    Dto("BookCreateDto2", pick = [name, author, publicationNumber, publicationDate, isbn], conversion = Conversion.FROM_DOMAIN),
-    Dto("BookListDto", pick = [name, author, isbn], conversion = Conversion.TO_DOMAIN),
+    Dto("BookCreateDto", omit = [id], conversion = Conversion.TO_DOMAIN),
+    Dto("BookCreateDto2", pick = [name, author, publicationNumber, publicationDate, isbn], conversion = Conversion.TO_DOMAIN),
+    Dto("BookListDto", pick = [name, author, isbn], conversion = Conversion.FROM_DOMAIN),
 )
 class Book(
     val name: String,
     val author: String,
+    @DtoField("BookCreateDto", name="number", type = String::class, expression = "number.toInt()")
     val publicationNumber: Int,
     val publicationDate: Date,
 ) {
