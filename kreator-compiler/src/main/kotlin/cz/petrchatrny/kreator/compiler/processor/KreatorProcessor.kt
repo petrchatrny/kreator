@@ -17,13 +17,13 @@ import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
 import com.squareup.kotlinpoet.ksp.writeTo
 import cz.petrchatrny.kreator.annotations.ClassType
-import cz.petrchatrny.kreator.annotations.Conversion
+import cz.petrchatrny.kreator.annotations.Mapping
 import cz.petrchatrny.kreator.annotations.Dto
 import cz.petrchatrny.kreator.annotations.DtoField
 import cz.petrchatrny.kreator.annotations.Kreator
 import cz.petrchatrny.kreator.compiler.util.ConstructorScore
 import cz.petrchatrny.kreator.compiler.util.DtoFieldStruct
-import cz.petrchatrny.kreator.compiler.util.Mapping
+import cz.petrchatrny.kreator.compiler.util.MetaData
 import cz.petrchatrny.kreator.compiler.util.toParameterSpec
 import kotlin.collections.contains
 
@@ -125,9 +125,9 @@ class KreatorProcessor(
             logger.warn("DTO ${dto.name} of class ${sourceClass.simpleName.asString()} should define either 'pick' or 'omit' as non-empty array.")
         }
 
-        // build DTO properties and mappings
+        // build DTO properties and metaData
         val newProperties: MutableSet<PropertySpec> = mutableSetOf()
-        val mappings: MutableSet<Mapping> = initMappings(
+        val metaData: MutableSet<MetaData> = initMetaData(
             originClass = sourceClass.toClassName().simpleName,
             dto = dto,
             originProperties = originProperties,
@@ -136,10 +136,10 @@ class KreatorProcessor(
 
         for (prop in selectedProperties) {
             logger.info("Processing property ${prop.simpleName.getShortName()}")
-            val (properties, mapping) = buildDtoProperties(dto.name, prop)
+            val (properties, meta) = buildDtoProperties(dto.name, prop)
 
             newProperties.addAll(properties)
-            mappings.addAll(mapping)
+            metaData.addAll(meta)
         }
 
         // add constructor
@@ -152,19 +152,19 @@ class KreatorProcessor(
 
         // add mapping functions
         val className = ClassName(packageName = sourceClass.packageName.asString(), simpleNames = listOf(dto.name))
-        when (dto.conversion) {
-            Conversion.NONE -> {}
+        when (dto.mapping) {
+            Mapping.NONE -> {}
 
-            Conversion.TO_DOMAIN -> {
-                val toDomainFunction = buildToDomainFunction(sourceClass, newProperties, mappings)
+            Mapping.TO_DOMAIN -> {
+                val toDomainFunction = buildToDomainFunction(sourceClass, newProperties, metaData)
                 if (toDomainFunction != null) {
                     classSpecBuilder.addFunction(toDomainFunction)
                 }
             }
 
-            Conversion.FROM_DOMAIN -> {
+            Mapping.FROM_DOMAIN -> {
                 val compObject = TypeSpec.companionObjectBuilder()
-                val fromDomainFunction = buildFromDomainFunction(sourceClass, className, mappings)
+                val fromDomainFunction = buildFromDomainFunction(sourceClass, className, metaData)
 
                 compObject.addFunction(fromDomainFunction)
                 classSpecBuilder.addType(compObject.build())
@@ -175,32 +175,10 @@ class KreatorProcessor(
         return classSpecBuilder.build()
     }
 
-    private fun initMappings(
-        originClass: String,
-        dto: Dto,
-        originProperties: List<KSPropertyDeclaration>,
-        selectedProperties: List<KSPropertyDeclaration>
-    ): MutableSet<Mapping> {
-        val mappings = mutableSetOf<Mapping>()
-
-        for (property in originProperties) {
-            if (property in selectedProperties) {
-                val propName = property.simpleName.asString()
-                if (dto.conversion == Conversion.FROM_DOMAIN) {
-                    mappings.add(Mapping(originClass, dto.name, propName, propName, ""))
-                } else if (dto.conversion == Conversion.TO_DOMAIN) {
-                    mappings.add(Mapping(dto.name, originClass, propName, propName, ""))
-                }
-            }
-        }
-
-        return mappings
-    }
-
     private fun buildDtoProperties(
         dtoName: String,
         sourceProperty: KSPropertyDeclaration
-    ): Pair<MutableList<PropertySpec>, Set<Mapping>> {
+    ): Pair<MutableList<PropertySpec>, Set<MetaData>> {
         val dtoProperties = mutableListOf<PropertySpec>()
 
         // parse all DtoField annotations among this property
@@ -242,15 +220,16 @@ class KreatorProcessor(
             }
         }
 
+        // save mappings between fields with expressions
         val mappings = annotations.map {
             val (fromClass, toClass) =
-                if (it.conversion == Conversion.FROM_DOMAIN) {
+                if (it.mapping == Mapping.FROM_DOMAIN) {
                     sourceProperty.parentDeclaration?.simpleName?.asString().orEmpty() to dtoName
                 } else {
                     dtoName to sourceProperty.parentDeclaration?.simpleName?.asString().orEmpty()
                 }
 
-            Mapping(
+            MetaData(
                 fromClass = fromClass,
                 toClass = toClass,
                 fromProperty = sourceProperty.simpleName.asString(),
@@ -268,7 +247,7 @@ class KreatorProcessor(
     private fun buildFromDomainFunction(
         sourceClass: KSClassDeclaration,
         dtoClass: ClassName,
-        mappings: Set<Mapping>
+        mappings: Set<MetaData>
     ): FunSpec {
         val parameters = mutableListOf<String>()
         val filteredMappings = mappings
@@ -297,9 +276,9 @@ class KreatorProcessor(
     private fun buildToDomainFunction(
         sourceClass: KSClassDeclaration,
         dtoProperties: Set<PropertySpec>,
-        mappings: Set<Mapping>
+        metaData: Set<MetaData>
     ): FunSpec? {
-        // TODO fix
+        // TODO add apply
         val dtoPropsByNames = dtoProperties.associateBy { it.name }
 
         val bestConstructor = sourceClass.getConstructors()
@@ -315,11 +294,11 @@ class KreatorProcessor(
         val constructorParameters = bestConstructor.parameters.map { it.name?.asString() }
 
         val parameters = mutableListOf<String>()
-        val filteredMappings = mappings
+        val filteredMetaData = metaData
             .filter { it.toClass == sourceClass.toClassName().simpleName }
             .toSet()
 
-        for (mapping in filteredMappings) {
+        for (mapping in filteredMetaData) {
             if (mapping.fromProperty in constructorParameters) {
                 if (mapping.expression != "") {
                     parameters.add("${mapping.toProperty}=${mapping.expression}")
@@ -344,7 +323,7 @@ class KreatorProcessor(
         var name = ""
         var type: KSType? = null
         var expression = ""
-        var conversion: Conversion = Conversion.NONE
+        var mapping: Mapping = Mapping.NONE
 
         for (argument in annotation.arguments) {
             when (argument.name?.getShortName()) {
@@ -367,7 +346,7 @@ class KreatorProcessor(
             type = null
         }
 
-        return DtoFieldStruct(classNames = classNames, name, type, expression, conversion)
+        return DtoFieldStruct(classNames = classNames, name, type, expression, mapping)
     }
 
     private fun typeReferenceToTypeName(typeReference: KSTypeReference): TypeName {
@@ -383,23 +362,25 @@ class KreatorProcessor(
     ): ConstructorScore? {
         var matchedParameters = 0
 
-        for (param in constructor.parameters) {
-            val name = param.name?.asString() ?: return null
-            val dtoProp = dtoProps[name]
+    private fun initMetaData(
+        originClass: String,
+        dto: Dto,
+        originProperties: List<KSPropertyDeclaration>,
+        selectedProperties: List<KSPropertyDeclaration>
+    ): MutableSet<MetaData> {
+        val metaData = mutableSetOf<MetaData>()
 
-            if (dtoProp != null) {
-                val paramType = param.type.resolve().toTypeName()
-                if (paramType != dtoProp.type) {
-                    return null // TODO type mismatch
-                }
-                matchedParameters++
-            } else {
-                if (!param.hasDefault) {
-                    return null // missing parameter without default value is bad
+        for (property in originProperties) {
+            if (property in selectedProperties) {
+                val propName = property.simpleName.asString()
+                if (dto.mapping == Mapping.FROM_DOMAIN) {
+                    metaData.add(MetaData(originClass, dto.name, propName, propName, ""))
+                } else if (dto.mapping == Mapping.TO_DOMAIN) {
+                    metaData.add(MetaData(dto.name, originClass, propName, propName, ""))
                 }
             }
         }
 
-        return ConstructorScore(constructor, matchedParameters)
+        return metaData
     }
 }

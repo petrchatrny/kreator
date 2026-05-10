@@ -88,17 +88,17 @@ class DtoFieldAnnotationTest {
     }
 
     @Test
-    fun `check expression is used in FROM conversion`() {
+    fun `check expression is used in fromDomain mapping method`() {
         // TODO
     }
 
     @Test
-    fun `check expression is used in TO conversion`() {
+    fun `check expression is used in toDomain mapping method`() {
         // TODO
     }
 
     @Test
-    fun `check expression is not used in NONE conversion`() {
+    fun `check expression is not used in NONE mapping`() {
         // TODO
     }
 }

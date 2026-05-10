@@ -11,8 +11,8 @@ package cz.petrchatrny.kreator.annotations
  * [omit] defines the properties that will *not* appear in the resulting DTO class
  *        (all remaining properties from the full set will be included)
  * [classType] the Kotlin class type — how the new DTO class will be implemented
- * [conversion] specifies which conversion methods will be generated
- *              (conversion from the domain class to the DTO, from the DTO to the domain class or none)
+ * [mapping] specifies which mapping methods will be generated
+ *              (mapping from the domain class to the DTO, from the DTO to the domain class or none)
  *
  * @see Kreator
  */
@@ -23,5 +23,5 @@ annotation class Dto(
     val pick: Array<String> = [],
     val omit: Array<String> = [],
     val classType: ClassType = ClassType.DATA_CLASS,
-    val conversion: Conversion = Conversion.NONE
+    val mapping: Mapping = Mapping.NONE
 )

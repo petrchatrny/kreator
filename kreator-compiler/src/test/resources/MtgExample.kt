@@ -1,7 +1,7 @@
 package com.example.mtg
 
 import cz.petrchatrny.kreator.annotations.ClassType
-import cz.petrchatrny.kreator.annotations.Conversion
+import cz.petrchatrny.kreator.annotations.Mapping
 import cz.petrchatrny.kreator.annotations.Dto
 
 import cz.petrchatrny.kreator.annotations.Kreator
@@ -9,9 +9,9 @@ import java.util.UUID
 
 @Kreator(
     Dto(name = "MtgCardRefDto", pick = ["id"]),
-    Dto(name = "MtgCardCreateDto", omit = ["id"], conversion = Conversion.TO_DOMAIN),
+    Dto(name = "MtgCardCreateDto", omit = ["id"], mapping = Mapping.TO_DOMAIN),
     Dto(name = "MtgCardUpdateDto", omit = ["id", "createdByUser"], classType = ClassType.CLASS),
-    Dto(name = "MtgCardListDto", pick = ["id", "name", "type", "manaCost"], conversion = Conversion.FROM_DOMAIN),
+    Dto(name = "MtgCardListDto", pick = ["id", "name", "type", "manaCost"], mapping = Mapping.FROM_DOMAIN),
 )
 class MtgCard(
     val name: String,

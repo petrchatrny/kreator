@@ -1,6 +1,6 @@
 package cz.petrchatrny.kreator.compiler.util
 
-data class Mapping(
+data class MetaData(
     val fromClass: String,
     val toClass: String,
     val fromProperty: String,
@@ -11,7 +11,7 @@ data class Mapping(
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as Mapping
+        other as MetaData
 
         if (fromClass != other.fromClass) return false
         if (toClass != other.toClass) return false

@@ -1,7 +1,7 @@
 package cz.petrchatrny.kreator.compiler.util
 
 import com.google.devtools.ksp.symbol.KSType
-import cz.petrchatrny.kreator.annotations.Conversion
+import cz.petrchatrny.kreator.annotations.Mapping
 import java.util.Collections
 
 data class DtoFieldStruct(
@@ -9,5 +9,5 @@ data class DtoFieldStruct(
     val name: String,
     val type: KSType?,
     val expression: String,
-    val conversion: Conversion
+    val mapping: Mapping
 )

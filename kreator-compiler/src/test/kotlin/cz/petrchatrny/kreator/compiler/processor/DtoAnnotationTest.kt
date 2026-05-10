@@ -153,12 +153,12 @@ class DtoAnnotationTest {
     }
 
     @Test
-    fun `check class contains no conversion method`() {
+    fun `check class contains no mapping method`() {
         // TODO
     }
 
     @Test
-    fun `check class contains from-conversion method`() {
+    fun `check class contains toDomain mapping method`() {
         // given
         val source = getKotlinSourceFile("MtgExample.kt")
 
@@ -180,7 +180,7 @@ class DtoAnnotationTest {
     }
 
     @Test
-    fun `check class contains to-conversion method`() {
+    fun `check class contains fromDomain mapping method`() {
         // TODO
     }
 }

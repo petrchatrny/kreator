@@ -1,6 +1,6 @@
 package cz.petrchatrny.kreator.test_jvm.book
 
-import cz.petrchatrny.kreator.annotations.Conversion
+import cz.petrchatrny.kreator.annotations.Mapping
 import cz.petrchatrny.kreator.annotations.Dto
 import cz.petrchatrny.kreator.annotations.DtoField
 import cz.petrchatrny.kreator.annotations.FieldConstants
@@ -16,9 +16,9 @@ import java.util.UUID
 
 @FieldConstants
 @Kreator(
-    Dto("BookCreateDto", omit = [id], conversion = Conversion.TO_DOMAIN),
-    Dto("BookCreateDto2", pick = [name, author, publicationNumber, publicationDate, isbn], conversion = Conversion.TO_DOMAIN),
-    Dto("BookListDto", pick = [name, author, isbn], conversion = Conversion.FROM_DOMAIN),
+    Dto("BookCreateDto", omit = [id], mapping = Mapping.TO_DOMAIN),
+    Dto("BookCreateDto2", pick = [name, author, publicationNumber, publicationDate, isbn], mapping = Mapping.TO_DOMAIN),
+    Dto("BookListDto", pick = [name, author, isbn], mapping = Mapping.FROM_DOMAIN),
 )
 class Book(
     val name: String,
