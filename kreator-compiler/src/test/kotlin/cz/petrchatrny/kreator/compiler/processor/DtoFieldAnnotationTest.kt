@@ -96,9 +96,4 @@ class DtoFieldAnnotationTest {
     fun `check expression is used in toDomain mapping method`() {
         // TODO
     }
-
-    @Test
-    fun `check expression is not used in NONE mapping`() {
-        // TODO
-    }
 }
