@@ -34,7 +34,7 @@ fun configureCompilation(
 
 fun getKotlinSourceFile(name: String): SourceFile {
     return SourceFile.kotlin(
-        name = "SocialSiteExample.kt",
+        name = name,
         contents = object {}.javaClass.classLoader.getResource(name)!!.readText()
     )
 }
