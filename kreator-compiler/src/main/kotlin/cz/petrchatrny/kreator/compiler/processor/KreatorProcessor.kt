@@ -58,8 +58,9 @@ class KreatorProcessor(
                 // build files
                 val dtoFiles = mutableListOf<FileSpec>()
                 if (kreatorAnnotation.isSealed) {
-                    val sealedClass = TypeSpec.classBuilder("${annotatedClass.simpleName}Dto")
+                    val sealedClass = TypeSpec.classBuilder("${annotatedClass.simpleName.asString()}Dto")
                         .addTypes(dtoClasses)
+                        .addModifiers(KModifier.SEALED)
                         .build()
 
                     dtoFiles.add(buildDtoFile(annotatedClass.packageName.asString(), sealedClass))
