@@ -78,6 +78,7 @@ class DtoFieldAnnotationTest {
         assertContains(createDto, "val number: Long")
         assertContains(createDto, "val total: Long")
         assertContains(createDto, "val customer: String")
+        assertContains(createDto, "val billingAddress: BillingAddressCreateDto")
 
         assertContains(listDto, "val totalFormatted: String")
         assertContains(listDto, "val total: BigDecimal")

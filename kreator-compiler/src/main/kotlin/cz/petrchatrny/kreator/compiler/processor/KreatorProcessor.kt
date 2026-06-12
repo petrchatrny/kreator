@@ -21,11 +21,13 @@ import cz.petrchatrny.kreator.annotations.Mapping
 import cz.petrchatrny.kreator.annotations.Dto
 import cz.petrchatrny.kreator.annotations.DtoField
 import cz.petrchatrny.kreator.annotations.Kreator
+import cz.petrchatrny.kreator.compiler.exception.TypeNotResolved
 import cz.petrchatrny.kreator.compiler.util.ConstructorScore
 import cz.petrchatrny.kreator.compiler.util.DtoFieldStruct
 import cz.petrchatrny.kreator.compiler.util.MetaData
 import cz.petrchatrny.kreator.compiler.util.toParameterSpec
 import kotlin.collections.contains
+import kotlin.jvm.Throws
 
 @OptIn(KspExperimental::class)
 class KreatorProcessor(
@@ -76,6 +78,9 @@ class KreatorProcessor(
                 }
             } catch (_: IllegalStateException) {
                 logger.info("Invalid symbol added: $annotatedClass")
+                deferred.add(annotatedClass)
+            } catch (_: TypeNotResolved) {
+                logger.info("Missing type")
                 deferred.add(annotatedClass)
             }
         }
@@ -350,11 +355,17 @@ class KreatorProcessor(
         return DtoFieldStruct(classNames = classNames, name, type, expression, mapping)
     }
 
+    @Throws(TypeNotResolved::class)
     private fun typeReferenceToTypeName(typeReference: KSTypeReference): TypeName {
-        val resolvedType = typeReference.resolve()
-        val nullable = resolvedType.nullability == Nullability.NULLABLE
+        try {
+            val resolvedType = typeReference.resolve()
+            val nullable = resolvedType.nullability == Nullability.NULLABLE
 
-        return resolvedType.toTypeName().copy(nullable = nullable)
+            return resolvedType.toTypeName().copy(nullable = nullable)
+        } catch (e: IllegalArgumentException) {
+            logger.warn(e.message ?: "")
+            throw TypeNotResolved()
+        }
     }
 
     private fun scoreConstructor(

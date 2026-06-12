@@ -9,6 +9,12 @@ import cz.petrchatrny.kreator.annotations.Kreator
 import com.example.invoice.InvoiceFields.number
 import com.example.invoice.InvoiceFields.customerName
 import com.example.invoice.InvoiceFields.total
+import com.example.invoice.InvoiceFields.billingAddress
+
+import com.example.invoice.BillingAddressFields.id
+import com.example.invoice.BillingAddressFields.country
+import com.example.invoice.BillingAddressFields.city
+import com.example.invoice.BillingAddressCreateDto
 
 import java.math.BigDecimal
 
@@ -17,7 +23,7 @@ import java.math.BigDecimal
 //    Dto("InvoiceCreateDto", pick = [number, customerName, total], mapping = Mapping.TO_DOMAIN),
 //    Dto("InvoiceListDto", pick = [customerName, total], mapping = Mapping.FROM_DOMAIN),
 //    Dto("InvoiceInternalDto", pick = [number, total], mapping = Mapping.FROM_DOMAIN)
-    Dto("InvoiceCreateDto", pick = [number, customerName, total]),
+    Dto("InvoiceCreateDto", pick = [number, customerName, total, billingAddress]),
     Dto("InvoiceListDto", pick = [customerName, total]),
     Dto("InvoiceInternalDto", pick = [number, total])
 )
@@ -43,5 +49,21 @@ class Invoice(
     val total: BigDecimal,
 
     @DtoField("InvoiceCreateDto", "InvoiceUpdateDto", name = "customer")
-    val customerName: String
+    val customerName: String,
+
+    @DtoField("InvoiceCreateDto")
+    val billingAddress: BillingAddressCreateDto
+)
+
+@FieldConstants
+@Kreator(
+    Dto("BillingAddressCreateDto", omit = [id]),
+    Dto("BillingAddressListDto", pick = [id, country, city]),
+)
+class BillingAddress(
+    val id: Long? = null,
+    val street: String,
+    val city: String,
+    val zip: String,
+    val country: String,
 )
