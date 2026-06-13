@@ -5,6 +5,9 @@ import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.processing.SymbolProcessorProvider
 import cz.petrchatrny.kreator.compiler.processor.KreatorProcessor
 
+/**
+ * TODO KDoc
+ */
 class KreatorProcessorProvider : SymbolProcessorProvider {
 
     override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor {

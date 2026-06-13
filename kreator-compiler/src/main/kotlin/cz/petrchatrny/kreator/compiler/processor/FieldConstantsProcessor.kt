@@ -14,6 +14,9 @@ import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.ksp.writeTo
 import cz.petrchatrny.kreator.annotations.FieldConstants
 
+/**
+ * TODO KDoc
+ */
 class FieldConstantsProcessor(
     private val codeGenerator: CodeGenerator,
     private val logger: KSPLogger

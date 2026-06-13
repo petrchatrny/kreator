@@ -1,5 +1,8 @@
 package cz.petrchatrny.kreator.compiler.util
 
+/**
+ * TODO KDoc
+ */
 data class MetaData(
     val fromClass: String,
     val toClass: String,

@@ -29,6 +29,9 @@ import cz.petrchatrny.kreator.compiler.util.toParameterSpec
 import kotlin.collections.contains
 import kotlin.jvm.Throws
 
+/**
+ * TODO KDoc
+ */
 @OptIn(KspExperimental::class)
 class KreatorProcessor(
     private val codeGenerator: CodeGenerator,
