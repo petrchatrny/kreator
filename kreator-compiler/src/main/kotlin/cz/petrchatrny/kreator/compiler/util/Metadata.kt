@@ -3,7 +3,7 @@ package cz.petrchatrny.kreator.compiler.util
 /**
  * TODO KDoc
  */
-data class MetaData(
+data class Metadata(
     val fromClass: String,
     val toClass: String,
     val fromProperty: String,
@@ -14,7 +14,7 @@ data class MetaData(
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as MetaData
+        other as Metadata
 
         if (fromClass != other.fromClass) return false
         if (toClass != other.toClass) return false

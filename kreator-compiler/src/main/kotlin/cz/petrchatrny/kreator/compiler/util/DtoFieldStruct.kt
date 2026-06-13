@@ -12,5 +12,4 @@ data class DtoFieldStruct(
     val name: String,
     val type: KSType?,
     val expression: String,
-    val mapping: Mapping
 )
