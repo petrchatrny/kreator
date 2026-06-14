@@ -136,16 +136,11 @@ class KreatorProcessor(
 
         // build DTO properties and metadata
         val newProperties: MutableSet<PropertySpec> = mutableSetOf()
-        val metadata: MutableSet<Metadata> = initMetadata(
-            originClass = sourceClass.toClassName().simpleName,
-            dto = dto,
-            originProperties = originProperties,
-            selectedProperties = selectedProperties
-        )
+        val metadata: MutableSet<Metadata> = mutableSetOf()
 
         for (prop in selectedProperties) {
             logger.info("Processing property ${prop.simpleName.getShortName()}")
-            val (properties, meta) = buildDtoProperties(dto, prop)
+            val (properties, meta) = buildDtoProperties(dto, prop, sourceClass)
 
             newProperties.addAll(properties)
             metadata.addAll(meta)
@@ -186,9 +181,11 @@ class KreatorProcessor(
 
     private fun buildDtoProperties(
         dto: Dto,
-        sourceProperty: KSPropertyDeclaration
+        sourceProperty: KSPropertyDeclaration,
+        sourceClass: KSClassDeclaration
     ): Pair<MutableList<PropertySpec>, Set<Metadata>> {
         val dtoProperties = mutableListOf<PropertySpec>()
+        val metadata: MutableSet<Metadata> = mutableSetOf()
 
         // parse all DtoField annotations among this property
         // val dtoField = sourceProperty.getAnnotationsByType(DtoField::class).firstOrNull() // TODO this parsing doesn't work here due to usage of KClass<> argument in annotation: https://kotlinlang.org/docs/ksp-additional-details.html#type-and-resolution
@@ -200,6 +197,14 @@ class KreatorProcessor(
             .map { ann -> parseDtoFieldAnnotation(ann) }
             .toSet()
 
+        // mapping direction
+        val (fromClass, toClass) =
+            if (dto.mapping == Mapping.FROM_DOMAIN) {
+                sourceClass.simpleName.asString() to dto.name
+            } else {
+                dto.name to sourceClass.simpleName.asString()
+            }
+
         // if selected property has no @DtoField annotation, just add it as it is
         if (annotations.isEmpty()) {
             dtoProperties.add(
@@ -208,6 +213,19 @@ class KreatorProcessor(
                     type = typeReferenceToTypeName(sourceProperty.type)
                 ).initializer(sourceProperty.simpleName.asString()).build()
             )
+
+            // save metadata
+            metadata.add(
+                Metadata(
+                    fromClass = fromClass,
+                    toClass = toClass,
+                    fromProperty = sourceProperty.simpleName.asString(),
+                    toProperty = sourceProperty.simpleName.asString(),
+                    expression = ""
+                )
+            )
+
+            return Pair(dtoProperties, metadata)
         }
         // otherwise apply changes from annotations and construct new property
         else {
@@ -215,6 +233,7 @@ class KreatorProcessor(
                 // name
                 var name = annotation.name
                 if (name.isEmpty()) {
+                    // use default property's name if not it's not overridden by annotation
                     name = sourceProperty.simpleName.asString()
                 }
 
@@ -222,30 +241,21 @@ class KreatorProcessor(
                 val type: TypeName = annotation.type?.toTypeName()
                     ?: run { typeReferenceToTypeName(sourceProperty.type) }
 
-                dtoProperties.add(
-                    PropertySpec.builder(name, type)
-                        .initializer(name).build()
+                // save property with correct type
+                dtoProperties.add(PropertySpec.builder(name, type).initializer(name).build())
+
+                // save metadata
+                metadata.add(
+                    Metadata(
+                        fromClass = fromClass,
+                        toClass = toClass,
+                        fromProperty = sourceProperty.simpleName.asString(),
+                        toProperty = name,
+                        expression = annotation.expression
+                    )
                 )
             }
         }
-
-        // save mappings between fields with expressions
-        val metadata = annotations.map {
-            val (fromClass, toClass) =
-                if (dto.mapping == Mapping.FROM_DOMAIN) {
-                    sourceProperty.parentDeclaration?.simpleName?.asString().orEmpty() to dto.name
-                } else {
-                    dto.name to sourceProperty.parentDeclaration?.simpleName?.asString().orEmpty()
-                }
-
-            Metadata(
-                fromClass = fromClass,
-                toClass = toClass,
-                fromProperty = sourceProperty.simpleName.asString(),
-                toProperty = it.name,
-                expression = it.expression
-            )
-        }.toSet()
 
         return Pair(dtoProperties, metadata)
     }
@@ -338,6 +348,7 @@ class KreatorProcessor(
                 "classNames" -> {
                     (argument.value as Collection<String>?)?.let { classNames.addAll(it) }
                 }
+
                 "name" -> {
                     name = argument.value as String
                 }

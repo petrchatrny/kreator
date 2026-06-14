@@ -20,31 +20,27 @@ import java.math.BigDecimal
 
 @FieldConstants
 @Kreator(
-//    Dto("InvoiceCreateDto", pick = [number, customerName, total], mapping = Mapping.TO_DOMAIN),
-//    Dto("InvoiceListDto", pick = [customerName, total], mapping = Mapping.FROM_DOMAIN),
-//    Dto("InvoiceInternalDto", pick = [number, total], mapping = Mapping.FROM_DOMAIN)
-    Dto("InvoiceCreateDto", pick = [number, customerName, total, billingAddress]),
-    Dto("InvoiceListDto", pick = [customerName, total]),
-    Dto("InvoiceInternalDto", pick = [number, total])
+    Dto("InvoiceCreateDto", pick = [number, customerName, total, billingAddress], mapping = Mapping.TO_DOMAIN),
+    Dto("InvoiceListDto", pick = [customerName, total], mapping = Mapping.FROM_DOMAIN),
+    Dto("InvoiceInternalDto", pick = [number, total], mapping = Mapping.FROM_DOMAIN),
 )
 class Invoice(
     val number: Long,
 
     @DtoField("InvoiceCreateDto",
-        name = "total", // TODO tady odebrat jmeno, ale zatim to nefunguje
         type = Long::class,
-        expression = "BigDecimal(this.total).divide(BigDecimal(100))"
+        expression = "BigDecimal(total).divide(BigDecimal(100))"
     )
     @DtoField("InvoiceListDto")
-    @DtoField(
-        "InvoiceListDto", name = "totalFormatted",
+    @DtoField("InvoiceListDto",
+        name = "totalFormatted",
         type = String::class,
-        expression = "this.total.setScale(2).toPlainString()",
+        expression = "domain.total.setScale(2).toPlainString()",
     )
-    @DtoField(
-        "InvoiceInternalDto", name = "totalCents",
+    @DtoField("InvoiceInternalDto",
+        name = "totalCents",
         type = Long::class,
-        expression = "this.total.multiply(BigDecimal(100)).longValueExact()",
+        expression = "domain.total.multiply(BigDecimal(100)).longValueExact()",
     )
     val total: BigDecimal,
 
