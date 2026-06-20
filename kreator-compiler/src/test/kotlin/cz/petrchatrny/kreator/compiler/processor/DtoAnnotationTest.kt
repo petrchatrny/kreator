@@ -35,7 +35,7 @@ class DtoAnnotationTest {
         // then
         assertEquals(4, generatedFiles.size)
         assertEquals(
-            setOf("MtgCardRefDto.kt","MtgCardCreateDto.kt", "MtgCardUpdateDto.kt", "MtgCardListDto.kt"),
+            setOf("MtgCardRefDto.kt", "MtgCardCreateDto.kt", "MtgCardUpdateDto.kt", "MtgCardListDto.kt"),
             generatedFiles.map { it.name }.toSet()
         )
     }
@@ -112,11 +112,11 @@ class DtoAnnotationTest {
         assertContains(generatedCode, "val type: String?")
         assertContains(generatedCode, "val manaCost: Map<MtgCard.ManaColor, Int>")
 
-        assertFalse (generatedCode.contains("val rarity: Int"))
-        assertFalse (generatedCode.contains("val isFoil: Boolean"))
-        assertFalse (generatedCode.contains("val createdByUser: String"))
-        assertFalse (generatedCode.contains("var description: String?"))
-        assertFalse (generatedCode.contains("var updatedByUser: String?"))
+        assertFalse(generatedCode.contains("val rarity: Int"))
+        assertFalse(generatedCode.contains("val isFoil: Boolean"))
+        assertFalse(generatedCode.contains("val createdByUser: String"))
+        assertFalse(generatedCode.contains("var description: String?"))
+        assertFalse(generatedCode.contains("var updatedByUser: String?"))
     }
 
     @Test
@@ -148,13 +148,31 @@ class DtoAnnotationTest {
         assertContains(generatedCode, "val description: String?")
         assertContains(generatedCode, "val updatedByUser: String?")
 
-        assertFalse (generatedCode.contains("val id: UUID"))
-        assertFalse (generatedCode.contains("val createdByUser: String"))
+        assertFalse(generatedCode.contains("val id: UUID"))
+        assertFalse(generatedCode.contains("val createdByUser: String"))
     }
 
     @Test
     fun `check class contains no mapping method`() {
-        // TODO
+        // given
+        val source = getKotlinSourceFile("MtgExample.kt")
+
+        // when
+        val compilation = configureCompilation(
+            sources = listOf(source),
+            providers = mutableListOf(KreatorProcessorProvider())
+        )
+        val result = compilation.compile()
+        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
+
+        val generatedCode = compilation.kspSourcesDir
+            .walkTopDown()
+            .first { it.isFile && it.name == "MtgCardRefDto.kt" }
+            .readText()
+
+        // then
+        assertFalse(generatedCode.contains("fun fromDomain"))
+        assertFalse(generatedCode.contains("fun toDomain"))
     }
 
     @Test
@@ -181,6 +199,23 @@ class DtoAnnotationTest {
 
     @Test
     fun `check class contains fromDomain mapping method`() {
-        // TODO
+        // given
+        val source = getKotlinSourceFile("MtgExample.kt")
+
+        // when
+        val compilation = configureCompilation(
+            sources = listOf(source),
+            providers = mutableListOf(KreatorProcessorProvider())
+        )
+        val result = compilation.compile()
+        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
+
+        val generatedCode = compilation.kspSourcesDir
+            .walkTopDown()
+            .first { it.isFile && it.name == "MtgCardListDto.kt" }
+            .readText()
+
+        // then
+        assertContains(generatedCode, "fun fromDomain(domain: MtgCard): MtgCardListDto")
     }
 }
