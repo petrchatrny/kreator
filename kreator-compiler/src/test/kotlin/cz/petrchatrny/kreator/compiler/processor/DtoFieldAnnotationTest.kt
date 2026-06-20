@@ -120,6 +120,25 @@ class DtoFieldAnnotationTest {
 
     @Test
     fun `check expression is used in toDomain mapping method`() {
-        // TODO
+        // given
+        val source = getKotlinSourceFile("InvoiceExample.kt")
+
+        // when
+        val compilation = configureCompilation(
+            sources = listOf(source),
+            providers = mutableListOf(FieldConstantsProcessorProvider(), KreatorProcessorProvider())
+        )
+        val result = compilation.compile()
+        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
+
+        val generatedFiles = compilation.kspSourcesDir
+            .walkTopDown()
+            .filter { it.isFile }
+            .toCollection(mutableSetOf())
+
+        val createDto = generatedFiles.first { it.name == "InvoiceCreateDto.kt" }.readText()
+
+        // then
+        assertContains(createDto, "total=BigDecimal(total).divide(BigDecimal(100))")
     }
 }
