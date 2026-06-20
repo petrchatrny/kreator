@@ -1,5 +1,6 @@
 package cz.petrchatrny.kreator.compiler.processor
 
+import java.util.logging.Logger
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.kspSourcesDir
 import cz.petrchatrny.kreator.compiler.provider.FieldConstantsProcessorProvider
@@ -14,6 +15,7 @@ import kotlin.test.assertEquals
 
 @OptIn(ExperimentalCompilerApi::class)
 class DtoFieldAnnotationTest {
+    private val logger = Logger.getLogger(this::class.java.name)
 
     @Test
     fun `check field is renamed`() {
@@ -90,7 +92,30 @@ class DtoFieldAnnotationTest {
 
     @Test
     fun `check expression is used in fromDomain mapping method`() {
-        // TODO
+        logger.warning("This test isn't complete and should be updated after fixes.")
+
+        // given
+        val source = getKotlinSourceFile("InvoiceExample.kt")
+
+        // when
+        val compilation = configureCompilation(
+            sources = listOf(source),
+            providers = mutableListOf(FieldConstantsProcessorProvider(), KreatorProcessorProvider())
+        )
+        val result = compilation.compile()
+        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
+
+        val generatedFiles = compilation.kspSourcesDir
+            .walkTopDown()
+            .filter { it.isFile }
+            .toCollection(mutableSetOf())
+
+        val listDto = generatedFiles.first { it.name == "InvoiceListDto.kt" }.readText()
+        // val internalDto = generatedFiles.first { it.name == "InvoiceInternalDto.kt" }.readText()
+
+        // then
+        assertContains(listDto, "totalFormatted=domain.total.setScale(2).toPlainString()")
+        // assertContains(internalDto, "totalCents=domain.total.multiply(BigDecimal(100)).longValueExact()")
     }
 
     @Test

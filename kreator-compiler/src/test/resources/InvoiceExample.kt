@@ -22,7 +22,8 @@ import java.math.BigDecimal
 @Kreator(
     Dto("InvoiceCreateDto", pick = [number, customerName, total, billingAddress], mapping = Mapping.TO_DOMAIN),
     Dto("InvoiceListDto", pick = [customerName, total], mapping = Mapping.FROM_DOMAIN),
-    Dto("InvoiceInternalDto", pick = [number, total], mapping = Mapping.FROM_DOMAIN),
+    // Dto("InvoiceInternalDto", pick = [number, total], mapping = Mapping.FROM_DOMAIN), missing import for BigDecimal
+    Dto("InvoiceInternalDto", pick = [number, total]),
 )
 class Invoice(
     val number: Long,

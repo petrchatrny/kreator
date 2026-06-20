@@ -268,6 +268,8 @@ class KreatorProcessor(
         dtoClass: ClassName,
         metadata: Set<Metadata>
     ): FunSpec {
+        /* TODO when a class from different package is used in the expression
+         ** compilation will fail on missing import */
         val parameters = mutableListOf<String>()
         val filteredMetadata = metadata
             .filter { it.fromClass == domainClass.toClassName().simpleName && it.toClass == dtoClass.simpleName }
