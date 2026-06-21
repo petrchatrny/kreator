@@ -126,8 +126,19 @@ class KreatorProcessor(
             else -> originProperties // both are empty, take every property
         }
 
-        // TODO check if user entered invalid name of property
-        // logger.warn()
+        // warn user about non-matched properties
+        val notFound: Set<String> = if (dto.pick.isNotEmpty()) {
+            (dto.pick.toSet() - originProperties.map { it.simpleName.asString() }.toSet())
+        } else {
+            (dto.omit.toSet() - originProperties.map { it.simpleName.asString() }.toSet())
+        }
+        if (notFound.isNotEmpty()) {
+            logger.warn(
+                "These properties defined for ${dto.name} could not " +
+                        "be found in the source class (${sourceClass.simpleName.asString()}): " +
+                        notFound.joinToString(", ")
+            )
+        }
 
         // check if data class is not empty
         if (dto.classType == ClassType.DATA_CLASS && selectedProperties.isEmpty()) {
@@ -394,7 +405,7 @@ class KreatorProcessor(
     private fun isCallable(
         constructor: KSFunctionDeclaration,
         toProperties: Set<String>
-    ) : Boolean {
+    ): Boolean {
         val constructorProperties = constructor.parameters.map { it.name?.asString() }
         return toProperties.containsAll(constructorProperties)
     }
