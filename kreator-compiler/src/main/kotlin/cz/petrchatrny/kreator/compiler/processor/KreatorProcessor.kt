@@ -11,7 +11,6 @@ import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSTypeReference
-import com.google.devtools.ksp.symbol.KSValueParameter
 import com.google.devtools.ksp.symbol.Nullability
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ksp.toClassName
@@ -315,9 +314,8 @@ class KreatorProcessor(
 
     /**
      * Member function inside DTO
-     * Převádí DTO třídu na Doménovou třídu.
-     * Musí vybrat správný konstruktor doménové třídy.
-     * K tomu slouží funkce pro výběr nejlepšího konstruktoru.
+     * Converts a DTO class to a Domain class.
+     * Must select the best constructor for the domain class.
      */
     private fun buildToDomainFunction(
         domainClass: KSClassDeclaration,
@@ -325,14 +323,10 @@ class KreatorProcessor(
         metadata: Set<Metadata>
     ): FunSpec? {
         val dtoPropsByNames = dtoProperties.associateBy { it.name }
-        val toProperties = metadata.map { it.toProperty }.toSet()
 
-        val callableConstructors = domainClass.getConstructors()
-            .filter { constructor -> isCallable(constructor, toProperties) }
-            .filter { constructor -> checkTypes(constructor.parameters, metadata, dtoPropsByNames) }
-            .toSet()
-
-        val bestConstructor = callableConstructors
+        val bestConstructor = domainClass.getConstructors()
+            .filter { isCallable(it, metadata) }
+            .filter { hasCorrectTypes(it, metadata, dtoPropsByNames) }
             .map { scoreConstructor(it, dtoPropsByNames) }
             .maxByOrNull { it.matchedParameters }
             ?.ctor
@@ -351,48 +345,76 @@ class KreatorProcessor(
             .map { it.simpleName.asString() }
             .toSet() - constructorParameters
 
-        val parameters = mutableListOf<String>()
         val filteredMetaData = metadata
             .filter { it.toClass == domainClass.toClassName().simpleName }
             .toSet()
 
+        val constructorArguments = mutableListOf<String>()
         for (metadata in filteredMetaData) {
-            if (metadata.fromProperty in constructorParameters) {
+            if (metadata.toProperty in constructorParameters) {
                 if (metadata.expression != "") {
-                    parameters.add("${metadata.toProperty}=${metadata.expression}")
+                    constructorArguments.add("${metadata.toProperty}=${metadata.expression}")
                 } else {
-                    parameters.add("${metadata.toProperty}=${metadata.fromProperty}")
+                    constructorArguments.add("${metadata.toProperty}=${metadata.fromProperty}")
+                }
+            }
+        }
+
+        // TODO fix situation when in apply we are setting same property names using @ like this:
+        //  description = this@MtgCardCreateDto.description
+        // TODO apply can set only VAR properties, VALs must be filtered out
+        val applyStatements = mutableListOf<String>()
+        for (meta in filteredMetaData) {
+            if (meta.toProperty in otherSettableParameters) {
+                if (meta.expression.isNotEmpty()) {
+                    applyStatements.add("${meta.toProperty} = ${meta.expression}")
+                } else {
+                    applyStatements.add("${meta.toProperty} = ${meta.fromProperty}")
                 }
             }
         }
 
         val toDomain = FunSpec.builder("toDomain")
-            .addStatement(format = "return %T(%L)", domainClass.toClassName(), parameters.joinToString(","))
-            .addStatement(".apply{}")
-            .returns(domainClass.toClassName())
+        if (applyStatements.isEmpty()) {
+            toDomain.addStatement(
+                "return %T(%L)",
+                domainClass.toClassName(),
+                constructorArguments.joinToString(", ")
+            )
+                .returns(domainClass.toClassName())
+        } else {
+            val applyContent = applyStatements.joinToString("\n    ")
+            toDomain.addStatement(
+                "return %T(%L).apply {\n    %L\n}",
+                domainClass.toClassName(),
+                constructorArguments.joinToString(", "),
+                applyContent
+            )
+                .returns(domainClass.toClassName())
+        }
 
         return toDomain.build()
     }
 
     /**
-     * Kontroluje, jestli každý parametr z metadat odpovídá svým datovým typem parametru z Konstruktoru.
-     * Pokud je u DTO parametr použitá expression, bere se to tak, že datový typ sedět nemusí, protože
-     * u expression to nejde ověřit a musíme důvěřovat uživateli knihovny, že to zadal dobře,
-     * kdyžtak sám dotane compilation error.
+     * Checks if each parameter from the metadata matches the data type of the parameter from the constructor.
+     * If the `expression` parameter is set for the Dto annotation, it is assumed that the data type may not fit,
+     * because it is not possible to verify this with an expressio, and we have to trust the library user that
+     * they entered it correctly, otherwise they will get a compilation error.
      */
-    private fun checkTypes(
-        constructorParameters: List<KSValueParameter>,
-        metadata: Set<Metadata>,
+    private fun hasCorrectTypes(
+        constructor: KSFunctionDeclaration,
+        metadata: Set<Metadata>, // TODO filter out metadata that are not part of constructor?
         dtoProperties: Map<String, PropertySpec>
     ): Boolean {
         for (md in metadata) {
             if (md.expression == "") {
-                val ctorParameter = constructorParameters.find { it.name?.asString() == md.toProperty }
+                val ctorParameter = constructor.parameters.find { it.name?.asString() == md.toProperty }
                 val dtoProperty = dtoProperties[md.fromProperty]
-                if (ctorParameter?.type?.toTypeName() != dtoProperty?.type) {
+                if (ctorParameter != null && ctorParameter.type.toTypeName() != dtoProperty?.type) {
                     logger.warn(
                         "Parameter types are not matching: " +
-                                "$ctorParameter (${ctorParameter?.type}) and " +
+                                "$ctorParameter (${ctorParameter.type}) and " +
                                 "${dtoProperty?.name}(${dtoProperty?.type})"
                     )
                     return false
@@ -404,14 +426,16 @@ class KreatorProcessor(
 
     private fun isCallable(
         constructor: KSFunctionDeclaration,
-        toProperties: Set<String>
+        metadata: Set<Metadata>
     ): Boolean {
+        val toProperties = metadata.map { it.toProperty }.toSet()
         val constructorProperties = constructor.parameters.map { it.name?.asString() }
         return toProperties.containsAll(constructorProperties)
     }
 
     /**
-     * Protože anotace @DtoField obsahuje jako jeden z argumentů KClass, je nutné přidat toto speciální parsování, jinak by to byl problém
+     * Since the @DtoField annotation contains KClass as one of its arguments, it is necessary to
+     * add this special parsing, otherwise it would be a problem.
      */
     private fun parseDtoFieldAnnotation(annotation: KSAnnotation): DtoFieldStruct {
         val classNames: MutableSet<String> = mutableSetOf()
@@ -461,7 +485,7 @@ class KreatorProcessor(
     }
 
     /**
-     * Spočítá, kolik maximálně argumentů je možné dosadit přímo do konstruktoru.
+     * Calculates the maximum number of arguments that can be passed directly to the constructor.
      */
     private fun scoreConstructor(
         constructor: KSFunctionDeclaration,
