@@ -100,6 +100,9 @@ class KreatorProcessor(
         // add class to file
         fileSpecBuilder.addType(dtoClass)
 
+        // TODO change this: copy all imports from source file to new file
+        fileSpecBuilder.addImport(packageName="java.math", "BigDecimal")
+
         // build file
         return fileSpecBuilder.build()
     }
