@@ -3,6 +3,7 @@ package cz.petrchatrny.kreator.compiler.processor
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.getAnnotationsByType
 import com.google.devtools.ksp.getConstructors
+import com.google.devtools.ksp.isPublic
 import com.google.devtools.ksp.processing.*
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSAnnotation
@@ -345,6 +346,7 @@ class KreatorProcessor(
 
         val otherSettableParameters = domainClass.getAllProperties()
             .filter { it.isMutable }
+            .filter { it.isPublic() }
             .map { it.simpleName.asString() }
             .toSet() - constructorParameters
 
@@ -363,22 +365,20 @@ class KreatorProcessor(
             }
         }
 
-        // TODO fix situation when in apply we are setting same property names using @ like this:
-        //  description = this@MtgCardCreateDto.description
         // TODO apply can set only VAR properties, VALs must be filtered out
-        val applyStatements = mutableListOf<String>()
+        val alsoStatements = mutableListOf<String>()
         for (meta in filteredMetaData) {
             if (meta.toProperty in otherSettableParameters) {
                 if (meta.expression.isNotEmpty()) {
-                    applyStatements.add("${meta.toProperty} = ${meta.expression}")
+                    alsoStatements.add("it.${meta.toProperty} = ${meta.expression}")
                 } else {
-                    applyStatements.add("${meta.toProperty} = ${meta.fromProperty}")
+                    alsoStatements.add("it.${meta.toProperty} = ${meta.fromProperty}")
                 }
             }
         }
 
         val toDomain = FunSpec.builder("toDomain")
-        if (applyStatements.isEmpty()) {
+        if (alsoStatements.isEmpty()) {
             toDomain.addStatement(
                 "return %T(%L)",
                 domainClass.toClassName(),
@@ -386,12 +386,12 @@ class KreatorProcessor(
             )
                 .returns(domainClass.toClassName())
         } else {
-            val applyContent = applyStatements.joinToString("\n    ")
+            val alsoContent = alsoStatements.joinToString("\n    ")
             toDomain.addStatement(
-                "return %T(%L).apply {\n    %L\n}",
+                "return %T(%L).also {\n    %L\n}",
                 domainClass.toClassName(),
                 constructorArguments.joinToString(", "),
-                applyContent
+                alsoContent
             )
                 .returns(domainClass.toClassName())
         }
