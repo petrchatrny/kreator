@@ -3,8 +3,18 @@
         SYSTEM "https://resources.jetbrains.com/writerside/1.0/product-profile.dtd">
 
 <instance-profile id="kreator"
-                 name="Kreator"
-                 start-page="starter-topic.md">
+                  name="Kreator"
+                  start-page="overview.md">
 
-    <toc-element topic="starter-topic.md"/>
+    <toc-element topic="overview.md"/>
+    <toc-element topic="installation.md"/>
+    <toc-element topic="quick-start.md"/>
+    <toc-element topic="field-constants.md"/>
+    <toc-element topic="dtos.md"/>
+    <!--    <toc-element topic="integrations.md"/>-->
+    <toc-element topic="known-issues.md"/>
+    <toc-element topic="changelog.md"/>
+    <toc-element topic="license.md"/>
+    <toc-element toc-title="API Documentation" href="https://www.jetbrains.com/writerside"/>
+    <toc-element toc-title="Source Code" href="https://github.com/petrchatrny/kreator"/>
 </instance-profile>
