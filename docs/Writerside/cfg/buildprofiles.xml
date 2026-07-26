@@ -6,6 +6,9 @@
     <variables></variables>
     <build-profile instance="kreator">
         <variables>
+            <primary-color>blueberry</primary-color>
+            <color-preset>soft</color-preset>
+
             <noindex-content>false</noindex-content>
         </variables>
     </build-profile>
