@@ -13,7 +13,7 @@
     <toc-element topic="dtos.md"/>
     <!--    <toc-element topic="integrations.md"/>-->
     <toc-element topic="known-issues.md"/>
-    <toc-element topic="changelog.md"/>
+<!--    <toc-element topic="changelog.md"/>-->
     <toc-element topic="license.md"/>
     <toc-element toc-title="API Documentation" href="https://www.jetbrains.com/writerside"/>
     <toc-element toc-title="Source Code" href="https://github.com/petrchatrny/kreator"/>
