@@ -9,6 +9,6 @@ plugins {
 subprojects {
     if (name in listOf("kreator-annotations", "kreator-compiler")) {
         group = "cz.petrchatrny.kreator"
-        version = "0.0.2"
+        version = "0.0.3"
     }
 }
