@@ -1,5 +1,5 @@
 # source: https://github.com/JetBrains/writerside-github-action
-name: Build and publisher user documentation
+name: Build and publish user documentation
 on:
   push:
     branches: ["main"]
