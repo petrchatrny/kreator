@@ -10,7 +10,7 @@ permissions:
   pages: write
 
 env:
-  INSTANCE: 'Writerside/hi'
+  INSTANCE: 'docs/Writerside/kreator'
   DOCKER_VERSION: 'latest'
   IS_GROUP: 'false'
 
