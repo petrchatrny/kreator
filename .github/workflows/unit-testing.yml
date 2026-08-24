@@ -3,9 +3,23 @@ on:
   push:
     branches:
       - "master"
+    paths:
+      - "kreator-annotations/**"
+      - "kreator-compiler/**"
+      - "test-jvm/**"
+      - "gradle.properties"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
   pull_request:
     branches:
       - "master"
+    paths:
+      - "kreator-annotations/**"
+      - "kreator-compiler/**"
+      - "test-jvm/**"
+      - "gradle.properties"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
 jobs:
   publish:
     name: Build and run Unit test
